@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>彰化轉運所 發送單位｜人員教育訓練成績管理（即時）</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --ink:#1a2330; --muted:#66738a; --line:#e3e8ef;
+    --brand:#0b6b3a; --brand2:#12945a; --accent:#1565c0; --warn:#c62828; --warnbg:#fdecea;
+    --okbg:#e8f5ec; --chip:#eef2f7; --shadow:0 1px 3px rgba(20,40,70,.08),0 6px 18px rgba(20,40,70,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;--line:#26313f;
+      --brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;
+      --warnbg:#3a1f22;--okbg:#183026;--chip:#1e2733;--shadow:0 1px 3px rgba(0,0,0,.4);}
+  }
+  :root[data-theme="dark"]{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;--line:#26313f;
+    --brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;--warnbg:#3a1f22;--okbg:#183026;--chip:#1e2733;}
+  :root[data-theme="light"]{--bg:#f4f6f9;--card:#fff;--ink:#1a2330;--muted:#66738a;--line:#e3e8ef;
+    --brand:#0b6b3a;--brand2:#12945a;--accent:#1565c0;--warn:#c62828;--warnbg:#fdecea;--okbg:#e8f5ec;--chip:#eef2f7;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.5}
+  .wrap{max-width:1600px;margin:0 auto;padding:18px 22px 60px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.3px}
+  .sub{color:var(--muted);font-size:13px;margin:2px 0 16px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+  .tile .k{font-size:12px;color:var(--muted);font-weight:600}
+  .tile .v{font-size:26px;font-weight:800;margin-top:3px}
+  .tile .v small{font-size:13px;color:var(--muted);font-weight:600}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+  .seg button{border:0;background:transparent;color:var(--muted);padding:7px 13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+  .seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+  input[type=search]{flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:9px 12px;font-size:14px}
+  select{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 10px;font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px}
+  .card h2{font-size:15px;margin:0;padding:13px 16px;border-bottom:1px solid var(--line);font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card h2 .h2note{font-weight:600;font-size:12px;color:var(--muted)}
+  .tblwrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
+  th.num,td.num{text-align:right}
+  tbody tr:hover{background:var(--chip)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700}
+  .pill.ok{background:var(--okbg);color:var(--brand)}
+  .pill.warn{background:var(--warnbg);color:var(--warn)}
+  .pill.mut{background:var(--chip);color:var(--muted)}
+  .rate{font-weight:800}
+  .mini{height:6px;background:var(--chip);border-radius:4px;overflow:hidden;min-width:70px;display:inline-block;vertical-align:middle}
+  .mini>i{display:block;height:100%;background:var(--brand2)}
+  .job{font-size:11px;font-weight:800;padding:1px 7px;border-radius:6px;background:var(--chip);color:var(--muted);margin-right:3px}
+  .wperson{border-bottom:1px solid var(--line);padding:12px 16px}
+  .wperson:last-child{border-bottom:0}
+  .wname{font-weight:800;font-size:14px;margin-bottom:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .wname .cnt{background:var(--warnbg);color:var(--warn);border-radius:999px;font-size:11px;padding:1px 8px;font-weight:800}
+  .wq{font-size:12.5px;color:var(--muted);padding:6px 0;border-top:1px dashed var(--line);display:grid;grid-template-columns:88px 46px 1fr;gap:8px;align-items:start}
+  .wq .qt{color:var(--ink)}
+  .wq .ans{font-size:11.5px}
+  .wq .x{color:var(--warn);font-weight:700}
+  .wq .o{color:var(--brand);font-weight:700}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
+  .foot{color:var(--muted);font-size:12px;text-align:center;margin-top:24px;line-height:1.7}
+  .theme-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:9px;padding:7px 10px;cursor:pointer;font-size:13px}
+  .theme-btn:hover{color:var(--ink)}
+  .nameL{color:var(--accent);font-weight:700;cursor:pointer;text-decoration:none;border-bottom:1px dotted var(--accent)}
+  .nameL:hover{opacity:.75}
+  .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+  .note>summary{cursor:pointer;list-style:none;padding:12px 16px;font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:8px}
+  .note>summary::-webkit-details-marker{display:none}
+  .note>summary::before{content:"▸";color:var(--accent);font-weight:800}
+  .note[open]>summary::before{content:"▾"}
+  .note .body{padding:2px 16px 15px;font-size:13px;color:var(--muted);line-height:1.75}
+  .note .qq{color:var(--ink);font-weight:700}
+  .note .ans{color:var(--brand);font-weight:800}
+  .note p{margin:9px 0 0}
+  /* 說明面板：只有小按鈕能開關，避免誤觸整條橫幅 */
+  .noteh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;font-weight:800;font-size:13.5px;color:var(--ink)}
+  .notebtn{border:1px solid var(--line);background:var(--chip);color:var(--muted);border-radius:8px;padding:4px 11px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .notebtn:hover{color:var(--ink)}
+  .bl{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+  .bl th,.bl td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
+  .bl th:first-child,.bl td:first-child{text-align:left}
+  .bl th{color:var(--muted);font-size:11.5px;font-weight:700;background:transparent}
+  .bl tr.jobrow td{font-weight:800}
+  .bl tr.sub td:first-child{padding-left:26px;color:var(--muted);font-weight:600}
+  .bl .over{color:var(--accent);font-weight:800}
+  .bl .under{color:var(--warn);font-weight:800}
+  .bl .mut{color:var(--muted)}
+  .achbar{display:inline-block;width:96px;height:8px;background:var(--chip);border-radius:5px;position:relative;overflow:hidden;vertical-align:middle;margin-right:6px}
+  .achbar>i{display:block;height:100%;border-radius:5px}
+  .achbar>.mk{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--muted);opacity:.7}
+  .tilenote{color:var(--muted);font-size:12px;margin:-8px 0 16px;line-height:1.6}
+  .rank-q{white-space:normal;min-width:200px;max-width:400px;color:var(--ink)}
+  .rank-c{white-space:normal;min-width:110px;max-width:190px;color:var(--brand);font-weight:700}
+  .rnk{display:inline-block;min-width:24px;text-align:center;font-weight:800;color:var(--warn)}
+  .rank-no{padding:11px 16px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);line-height:1.7}
+  /* 圖表（純 CSS，無外部庫） */
+  .chart{display:flex;align-items:flex-end;gap:7px;padding:16px 16px 34px;overflow-x:auto;min-height:180px}
+  .cbar{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:26px}
+  .cbar-track{height:120px;width:22px;background:var(--chip);border-radius:5px;display:flex;align-items:flex-end;overflow:hidden}
+  .cbar-track>i{display:block;width:100%;border-radius:5px 5px 0 0;transition:height .3s}
+  .cbar-val{font-size:10.5px;font-weight:800;color:var(--muted)}
+  .cbar-x{font-size:10.5px;color:var(--muted);white-space:nowrap;transform:rotate(-45deg);transform-origin:center top;margin-top:5px}
+  /* 複測追蹤 未通過卡 */
+  .np{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;padding:14px 16px}
+  .npcard{border:1px solid var(--warn);background:var(--warnbg);border-radius:12px;padding:11px 13px}
+  .npcard .nm{font-weight:800;font-size:14px;color:var(--warn);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .npcard .qq{font-size:12.5px;color:var(--ink);margin-top:6px;white-space:normal}
+  .npcard .aa{font-size:11.5px;color:var(--muted);margin-top:4px}
+  /* Modal 個人詳情 */
+  .modal{position:fixed;inset:0;background:rgba(10,18,30,.55);display:flex;align-items:flex-start;justify-content:center;padding:28px 14px;z-index:50;overflow-y:auto}
+  .mbox{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:820px;width:100%;overflow:hidden}
+  .mhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .mhead .mt{font-size:17px;font-weight:800;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .mhead .ms{color:var(--muted);font-size:12.5px;margin-top:4px}
+  .mclose{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:9px;padding:5px 11px;cursor:pointer;font-size:16px;line-height:1}
+  .mstat{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px 4px}
+  .mstat .ms1{background:var(--chip);border-radius:10px;padding:7px 12px;font-size:12px;color:var(--muted);font-weight:600}
+  .mstat .ms1 b{color:var(--ink);font-size:15px;font-weight:800}
+  .mbody{padding:8px 18px 18px}
+  .mdate{color:var(--ink);font-weight:700}
+  .loading{padding:50px;text-align:center;color:var(--muted)}
+  .spin{display:inline-block;width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:s .8s linear infinite;vertical-align:-4px;margin-right:8px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .hide{display:none}
+  /* 列印 */
+  @media print{
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    .noprint{display:none !important}
+    .note{break-inside:avoid}
+    .card,.tile{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+    th{position:static}
+    .modal{position:static;background:none;padding:0}
+    .mbox{box-shadow:none;border:0}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>🏢 彰化轉運所 · 發送單位</h1>
+      <div class="sub">人員教育訓練成績管理　2026/07/01–07/28　拆櫃 · 拉線 · 疊櫃</div>
+    </div>
+    <div class="toolbtns noprint" style="display:flex;gap:8px">
+      <button class="theme-btn" id="csvBtn">⬇ 匯出 CSV</button>
+      <button class="theme-btn" id="printBtn">🖨 列印</button>
+      <button class="theme-btn" id="themeBtn">🌓 主題</button>
+    </div>
+  </header>
+
+  <div id="app">
+    <div class="loading"><span class="spin"></span>正在從 Supabase 讀取成績資料…</div>
+  </div>
+
+  <div class="foot">
+    資料來源：Google 表單回覆（僅彰化轉運中心・發送單位）· 2026-07-26 直讀 Google Drive 54 份表單全量對帳｜每日一題 0/100，首測＝當日最早一次｜7/16 拆櫃已套用答案更正<br>
+    即時檢視 · 資料每 10 分鐘自動更新 · 共 <span id="fCount">–</span> 筆人日紀錄
+  </div>
+</div>
+
+<div id="modal" class="modal hide"><div class="mbox" id="mbox"></div></div>
+
+<script>
+// 即時版：不含任何金鑰。資料經 token 保護的 Edge Function 取得。
+const FN_URL = "https://hmqnlovyzlvvnkqmfwtt.supabase.co/functions/v1/records";
+const TOKEN = new URLSearchParams(location.search).get("k") || "";
+
+let ALL = [];      // all records
+let RETEST = [];   // retest_records（複測制，主管建議#2）
+let DATES = [];    // distinct sorted dates
+let state = { job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, openBL: false, openNote: false };
+
+const dateOK = r => (!state.from || r.test_date >= state.from) && (!state.to || r.test_date <= state.to);
+const jobOK = r => state.job === "全部" || r.job_type === state.job;
+const qOK = r => { if (!state.q) return true; const q = state.q.trim(); return r.name.includes(q) || (r.emp_id || "").includes(q); };
+
+// ---- theme ----
+document.getElementById("themeBtn").onclick = () => {
+  const r = document.documentElement;
+  const cur = r.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
+  r.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+};
+document.getElementById("csvBtn").onclick = exportCSV;
+document.getElementById("printBtn").onclick = () => window.print();
+
+// ---- aggregation ----
+function personRows() {
+  const map = new Map();
+  for (const r of ALL) {
+    if (!jobOK(r)) continue;
+    if (!dateOK(r)) continue;
+    let p = map.get(r.name);
+    if (!p) { p = { name: r.name, emp_id: r.emp_id, total: 0, wrong: 0, notpass: 0, jobs: new Set() }; map.set(r.name, p); }
+    p.total++; if (r.is_wrong) p.wrong++; if (!r.passed) p.notpass++; p.jobs.add(r.job_type);
+    if (!p.emp_id && r.emp_id) p.emp_id = r.emp_id;
+  }
+  let arr = [...map.values()].map(p => ({ ...p, right: p.total - p.wrong,
+    rightRate: p.total ? (p.total - p.wrong) / p.total : 0,
+    wrongRate: p.total ? p.wrong / p.total : 0, jobs: [...p.jobs] }));
+  if (state.q) { const q = state.q.trim(); arr = arr.filter(p => p.name.includes(q) || (p.emp_id || "").includes(q)); }
+  const k = state.sortKey, d = state.sortDir;
+  arr.sort((a, b) => { let x = a[k], y = b[k];
+    if (typeof x === "string") return d * x.localeCompare(y, "zh-Hant");
+    return d * ((x > y ? 1 : x < y ? -1 : 0)) || a.name.localeCompare(b.name, "zh-Hant"); });
+  return arr;
+}
+
+function wrongData() {
+  const map = new Map();
+  for (const r of ALL) {
+    if (!r.is_wrong) continue;
+    if (!jobOK(r)) continue;
+    if (!dateOK(r)) continue;
+    if (!qOK(r)) continue;
+    if (!map.has(r.name)) map.set(r.name, []);
+    map.get(r.name).push(r);
+  }
+  const arr = [...map.entries()].map(([name, items]) => ({ name, emp_id: items[0].emp_id, items:
+    items.sort((a, b) => a.test_date.localeCompare(b.test_date) || a.job_type.localeCompare(b.job_type)) }));
+  arr.sort((a, b) => b.items.length - a.items.length || a.name.localeCompare(b.name, "zh-Hant"));
+  return arr;
+}
+
+function stats() {
+  const rows = ALL.filter(r => jobOK(r) && dateOK(r));
+  const total = rows.length, wrong = rows.filter(r => r.is_wrong).length;
+  const people = new Set(rows.map(r => r.name)).size;
+  return { total, wrong, people, rightRate: total ? (total - wrong) / total : 0 };
+}
+
+function dailyData() {
+  const map = new Map();
+  for (const r of ALL) {
+    if (!jobOK(r)) continue;
+    if (!dateOK(r)) continue;
+    const key = r.test_date + "|" + r.job_type;
+    let d = map.get(key); if (!d) { d = { date: r.test_date, job: r.job_type, n: 0, wrong: 0 }; map.set(key, d); }
+    d.n++; if (r.is_wrong) d.wrong++;
+  }
+  return [...map.values()].sort((a, b) => a.date.localeCompare(b.date) || a.job.localeCompare(b.job));
+}
+
+// 每日答對率（依工種篩選，跨工種合計）供圖表
+function dailyRate() {
+  const map = new Map();
+  for (const r of ALL) {
+    if (!jobOK(r)) continue;
+    if (!dateOK(r)) continue;
+    let d = map.get(r.test_date); if (!d) { d = { date: r.test_date, n: 0, wrong: 0 }; map.set(r.test_date, d); }
+    d.n++; if (r.is_wrong) d.wrong++;
+  }
+  return [...map.values()].sort((a, b) => a.date.localeCompare(b.date))
+    .map(d => ({ ...d, rate: d.n ? (d.n - d.wrong) / d.n : 0 }));
+}
+
+// ---- render ----
+const pct = x => (x * 100).toFixed(1) + "%";
+const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const d2 = s => (s || "").slice(5); // MM-DD
+const retestOf = name => RETEST.filter(x => x.name === name)
+  .sort((a, b) => (b.retest_date || "").localeCompare(a.retest_date || ""))[0];
+function retestResultCell(name) {
+  const rt = retestOf(name);
+  if (!rt) return '<span class="pill mut">待複測</span>';
+  const s = rt.score == null ? "" : rt.score + "分";
+  return rt.passed ? `<span class="pill ok">${s}${s ? "·" : ""}通過</span>` : `<span class="pill warn">${s || "未通過"}</span>`;
+}
+function retestSignCell(name) {
+  const rt = retestOf(name);
+  if (!rt || !rt.teacher) return "＿＿＿＿＿";
+  return esc(rt.teacher) + (rt.signed_date ? " · " + d2(rt.signed_date) : "");
+}
+
+// ---- 應測基準（每日）與人力公司對照 ----
+const EXPECT = { "拆櫃": 22, "拉線": 19, "疊櫃": 55 };
+const DIE_EXPECT = { "有根": 12, "丞閎": 17, "信林": 26 }; // 疊櫃 各人力公司每日應填
+const companyOf = emp => { const p = (emp || "").slice(0, 2);
+  return p === "10" ? "有根" : p === "20" ? "丞閎" : p === "30" ? "信林" : p === "00" ? "新竹物流正職" : "其他"; };
+
+function avgDistinctPerDay(rows, keyFn) {
+  const byDate = new Map();
+  for (const r of rows) { if (!byDate.has(r.test_date)) byDate.set(r.test_date, new Set()); byDate.get(r.test_date).add(keyFn(r)); }
+  const days = [...byDate.values()].map(s => s.size);
+  return days.length ? days.reduce((a, b) => a + b, 0) / days.length : 0;
+}
+
+function baselineData() {
+  const jobs = ["拆櫃", "拉線", "疊櫃"].map(j => {
+    const rows = ALL.filter(r => r.job_type === j);
+    return { job: j, expect: EXPECT[j], distinct: new Set(rows.map(r => r.name)).size, avgDay: avgDistinctPerDay(rows, r => r.name) };
+  });
+  const drows = ALL.filter(r => r.job_type === "疊櫃");
+  const compNames = {}; for (const r of drows) (compNames[companyOf(r.emp_id)] ||= new Set()).add(r.name);
+  const ord = { "信林": 0, "有根": 1, "丞閎": 2, "新竹物流正職": 3, "其他": 4 };
+  const companies = Object.keys(compNames).map(c => ({
+    company: c, expect: DIE_EXPECT[c] ?? null, distinct: compNames[c].size,
+    avgDay: avgDistinctPerDay(drows.filter(r => companyOf(r.emp_id) === c), r => r.name),
+  })).sort((a, b) => (ord[a.company] ?? 9) - (ord[b.company] ?? 9));
+  return { jobs, companies };
+}
+
+// 達成率長條：實測/應測，100% 標記在 66.7%（視覺上限 150%）
+function achBar(avg, exp) {
+  if (exp == null) return '<span class="mut">—</span>';
+  const ratio = avg / exp;
+  const w = Math.min(ratio, 1.5) / 1.5 * 100;
+  const col = ratio >= 1 ? "var(--accent)" : "var(--warn)";
+  return `<span class="achbar"><i style="width:${w.toFixed(0)}%;background:${col}"></i><span class="mk" style="left:66.7%"></span></span>`
+    + `<b style="color:${col}">${(ratio * 100).toFixed(0)}%</b>`;
+}
+
+function renderBaseline() {
+  const head = `<div class="note"><div class="noteh"><span>📊 應測基準對照（每日）· 全期間，不受上方篩選影響</span>
+    <button class="notebtn" id="blToggle">${state.openBL ? "收合 ▾" : "展開 ▸"}</button></div>`;
+  if (!state.openBL) return head + `</div>`;
+  const { jobs, companies } = baselineData();
+  const gap = (avg, exp) => exp == null ? '<span class="mut">—</span>'
+    : `<span class="${avg - exp >= 0 ? "over" : "under"}">${avg - exp >= 0 ? "+" : ""}${(avg - exp).toFixed(1)}</span>`;
+  let h = head + `<div class="body">
+    <div class="tblwrap"><table class="bl"><thead><tr>
+      <th>工種／人力公司</th><th>應測(每日)</th><th>每日平均實測</th><th>超額</th><th style="text-align:left">達成率(實測/應測)</th><th>整月不重複</th>
+    </tr></thead><tbody>`;
+  for (const j of jobs) {
+    h += `<tr class="jobrow"><td>${j.job}</td><td>${j.expect}</td><td>${j.avgDay.toFixed(1)}</td>
+      <td>${gap(j.avgDay, j.expect)}</td><td style="text-align:left">${achBar(j.avgDay, j.expect)}</td><td class="mut">${j.distinct}</td></tr>`;
+    if (j.job === "疊櫃") for (const c of companies) {
+      h += `<tr class="sub"><td>└ ${c.company}</td><td>${c.expect ?? '<span class="mut">—</span>'}</td>
+        <td>${c.avgDay.toFixed(1)}</td><td>${gap(c.avgDay, c.expect)}</td><td style="text-align:left">${achBar(c.avgDay, c.expect)}</td><td class="mut">${c.distinct}</td></tr>`;
+    }
+  }
+  h += `</tbody></table></div>
+    <p>「應測」為各作業區<b>每日</b>基本作業人數基準；因到工人員跨組安排，實際答題常<b>高於</b>應測（達成率>100% 屬正常，非異常）。「整月不重複」是 7/01–7/28 曾參與者的累積人數。疊櫃依工號開頭分：10＝有根、20＝丞閎、30＝信林、00＝新竹物流正職。</p>
+    <p style="color:var(--accent)">※ 目前僅有應測「人數」、無應測「名單」，故無法判斷「該測的人是否都測了」，達成率長條呈現的是答題量與應測基準的比值，不是點名涵蓋率。</p>
+  </div></div>`;
+  return h;
+}
+
+function render() {
+  const s = stats();
+  const jobs = ["全部", "拆櫃", "拉線", "疊櫃"];
+  let h = "";
+  h += `<div class="tiles">
+    <div class="tile"><div class="k">總測驗人日</div><div class="v">${s.total}</div></div>
+    <div class="tile"><div class="k">受測人數</div><div class="v">${s.people} <small>人</small></div></div>
+    <div class="tile"><div class="k">首測答對率</div><div class="v" style="color:var(--brand)">${pct(s.rightRate)}</div></div>
+    <div class="tile"><div class="k">首測答錯人次</div><div class="v" style="color:var(--warn)">${s.wrong}</div></div>
+  </div>`;
+
+  h += `<div class="tilenote">💡 「受測人數」＝實際答題的<b>不重複姓名數</b>；因到工人員跨組安排，一人可能橫跨多個工種，故「總測驗人日」大於「受測人數」屬正常現象。點姓名可看<b>個人詳情</b>。</div>`;
+
+  h += `<div class="note"><div class="noteh"><span>📋 題目正解說明 · 7/16 拆櫃（表單答案曾設錯，已更正）</span>
+    <button class="notebtn" id="noteToggle">${state.openNote ? "收合 ▾" : "展開 ▸"}</button></div>
+    ${state.openNote ? `<div class="body">
+      <div><span class="job">拆櫃</span><span class="qq">外箱凹凸不平，無法平整接觸輸送帶貨件，如何處置比較適合？</span></div>
+      <div style="margin-top:7px">正解：<span class="ans">2.由異常線人工排出</span></div>
+      <p>外箱凹凸不平、無法平整接觸輸送帶的貨件屬「有疑慮貨件」，一旦上到自動化分貨機就有卡件、進而導致機台故障停線的風險，因此應由<b>異常線人工排出</b>、避免它進自動分貨機。惟排出並非無條件——仍須由現場作業人員先判斷該貨件實際上會不會卡在分貨機，確認有卡件風險再進行人工排出，而非一律排出。</p>
+      <p style="color:var(--accent)">※ 當日 Google 表單一度將此題正解設錯，導致 27 人首測 0 分；此為表單設定紕漏、非人員不會，本表已更正為全數答對，故「錯題統整」不會列入此題。</p>
+    </div>` : ""}</div>`;
+
+  h += renderBaseline();
+
+  h += `<div class="bar noprint">
+    <div class="seg" id="jobSeg">${jobs.map(j => `<button class="${state.job === j ? "on" : ""}" data-job="${j}">${j}</button>`).join("")}</div>
+    <div class="seg" id="viewSeg">
+      <button class="${state.view === "people" ? "on" : ""}" data-view="people">人員成績表</button>
+      <button class="${state.view === "wrong" ? "on" : ""}" data-view="wrong">錯題統整</button>
+      <button class="${state.view === "rank" ? "on" : ""}" data-view="rank">常錯題排行</button>
+      <button class="${state.view === "retest" ? "on" : ""}" data-view="retest">複測追蹤</button>
+      <button class="${state.view === "daily" ? "on" : ""}" data-view="daily">逐日總覽</button>
+    </div>
+    <input type="search" id="q" placeholder="🔍 搜尋姓名或工號" value="${esc(state.q)}">
+  </div>`;
+
+  const dopt = (sel) => DATES.map(d => `<option value="${d}" ${d === sel ? "selected" : ""}>${d.slice(5)}</option>`).join("");
+  h += `<div class="bar noprint" style="margin-top:-6px">
+    <span style="color:var(--muted);font-size:13px;font-weight:600">📅 日期區間</span>
+    <select id="dFrom">${dopt(state.from)}</select>
+    <span style="color:var(--muted)">–</span>
+    <select id="dTo">${dopt(state.to)}</select>
+    <button class="theme-btn" id="dReset">全部日期</button>
+    ${(state.from !== DATES[0] || state.to !== DATES[DATES.length-1]) ? `<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${state.from.slice(5)}~${state.to.slice(5)}</span>` : ""}
+  </div>`;
+
+  if (state.view === "people") h += renderPeople();
+  else if (state.view === "wrong") h += renderWrong();
+  else if (state.view === "rank") h += renderRank();
+  else if (state.view === "retest") h += renderRetest();
+  else h += renderDaily();
+
+  document.getElementById("app").innerHTML = h;
+  document.getElementById("fCount").textContent = ALL.length;
+  bind();
+}
+
+function sortableTh(label, key, cls) {
+  const on = state.sortKey === key;
+  const arrow = on ? (state.sortDir === -1 ? " ▼" : " ▲") : "";
+  return `<th class="${cls || ""}" data-sort="${key}">${label}${arrow}</th>`;
+}
+
+const nameLink = (name, emp) => `<span class="nameL" data-person="${esc(name)}">${esc(name)}</span>`;
+
+function renderPeople() {
+  const arr = personRows();
+  let h = `<div class="card"><h2>人員成績資料表（${arr.length} 人）</h2><div class="tblwrap"><table><thead><tr>
+    ${sortableTh("姓名", "name")}${sortableTh("工號", "emp_id")}<th>工種</th>
+    ${sortableTh("參加天數", "total", "num")}${sortableTh("首測答對", "right", "num")}
+    ${sortableTh("首測答錯", "wrong", "num")}${sortableTh("答對率", "rightRate", "num")}
+    ${sortableTh("曾未通過", "notpass", "num")}</tr></thead><tbody>`;
+  if (!arr.length) h += `<tr><td colspan="8" class="empty">查無資料</td></tr>`;
+  for (const p of arr) {
+    h += `<tr>
+      <td>${nameLink(p.name)}</td><td style="color:var(--muted)">${esc(p.emp_id)}</td>
+      <td>${p.jobs.map(j => `<span class="job">${j}</span>`).join("")}</td>
+      <td class="num">${p.total}</td><td class="num">${p.right}</td>
+      <td class="num">${p.wrong ? `<span class="pill warn">${p.wrong}</span>` : "0"}</td>
+      <td class="num"><span class="rate">${pct(p.rightRate)}</span>
+        <span class="mini"><i style="width:${(p.rightRate*100).toFixed(0)}%"></i></span></td>
+      <td class="num">${p.notpass ? `<span class="pill warn">${p.notpass}</span>` : "—"}</td>
+    </tr>`;
+  }
+  h += `</tbody></table></div></div>`;
+  return h;
+}
+
+function renderWrong() {
+  const arr = wrongData();
+  let h = `<div class="card"><h2>每個人錯的題目統整（${arr.length} 人有首測答錯）</h2>`;
+  if (!arr.length) h += `<div class="empty">此範圍內沒有首測答錯的紀錄 🎉</div>`;
+  for (const p of arr) {
+    h += `<div class="wperson"><div class="wname">${nameLink(p.name)}
+      <span style="color:var(--muted);font-weight:600;font-size:12px">${esc(p.emp_id)}</span>
+      <span class="cnt">答錯 ${p.items.length}</span></div>`;
+    for (const r of p.items) {
+      h += `<div class="wq">
+        <span><span class="job">${r.job_type}</span>${d2(r.test_date)}</span>
+        <span>${r.passed ? '<span class="pill ok" style="font-size:11px">已補正</span>' : '<span class="pill warn" style="font-size:11px">未通過</span>'}</span>
+        <span><span class="qt">${esc(r.question || "（是非題／當日題目）")}</span><br>
+          <span class="ans">你的答案：<span class="x">${esc(r.chosen_option)}</span>　正解：<span class="o">${esc(r.correct_option)}</span></span></span>
+      </div>`;
+    }
+    h += `</div>`;
+  }
+  h += `</div>`;
+  return h;
+}
+
+function rankData() {
+  const map = new Map();
+  const noq = {}; // 無題幹（是非題未抓到題幹）的答錯數，依工種
+  for (const r of ALL) {
+    if (!jobOK(r)) continue;
+    if (!dateOK(r)) continue;
+    if (!r.question) { if (r.is_wrong) noq[r.job_type] = (noq[r.job_type] || 0) + 1; continue; }
+    const key = r.job_type + "" + r.question;
+    let m = map.get(key);
+    if (!m) { m = { job: r.job_type, q: r.question, attempts: 0, wrong: 0, correct: "", dates: new Set() }; map.set(key, m); }
+    m.attempts++; if (r.is_wrong) m.wrong++; m.dates.add(r.test_date);
+    if (!m.correct && r.correct_option) m.correct = r.correct_option;
+  }
+  let arr = [...map.values()].map(m => ({ ...m, pct: m.attempts ? m.wrong / m.attempts : 0, dates: [...m.dates].sort() }))
+    .filter(m => m.wrong > 0)
+    .sort((a, b) => b.wrong - a.wrong || b.pct - a.pct || a.job.localeCompare(b.job));
+  return { arr, noq };
+}
+
+function renderRank() {
+  const { arr, noq } = rankData();
+  const tableFor = (items, cap = items.length) => {
+    const top = items.slice(0, cap);
+    let t = `<div class="tblwrap"><table><thead><tr>
+      <th class="num">名次</th><th>題目</th><th class="num">答錯</th><th class="num">答錯率</th>
+      <th class="num">應答</th><th>出現日期</th><th>正解</th></tr></thead><tbody>`;
+    if (!top.length) t += `<tr><td colspan="7" class="empty">此範圍內無答錯題目 🎉</td></tr>`;
+    top.forEach((m, i) => {
+      t += `<tr>
+        <td class="num"><span class="rnk">${i + 1}</span></td>
+        <td class="rank-q">${esc(m.q)}</td>
+        <td class="num"><span class="pill warn">${m.wrong}</span></td>
+        <td class="num"><span class="rate">${pct(m.pct)}</span></td>
+        <td class="num" style="color:var(--muted)">${m.attempts}</td>
+        <td style="color:var(--muted)">${m.dates.map(d2).join("、")}</td>
+        <td class="rank-c">${esc(m.correct || "（是非題／看題意）")}</td>
+      </tr>`;
+    });
+    t += `</tbody></table></div>`;
+    const more = items.length - top.length;
+    if (more > 0) t += `<div class="rank-no">※ 此工種另有 ${more} 題有答錯未列出。</div>`;
+    return t;
+  };
+  let h = "";
+  if (state.job === "全部") {
+    for (const j of ["拆櫃", "拉線", "疊櫃"]) {
+      const items = arr.filter(m => m.job === j);
+      h += `<div class="card"><h2><span class="job">${j}</span> 常錯題（${items.length} 題有答錯 · 複測題庫）</h2>${tableFor(items)}</div>`;
+    }
+  } else {
+    h += `<div class="card"><h2><span class="job">${state.job}</span> 常錯題（${arr.length} 題有答錯 · 複測題庫）</h2>${tableFor(arr)}</div>`;
+  }
+  const noqTotal = Object.values(noq).reduce((a, b) => a + b, 0);
+  if (noqTotal > 0) h += `<div class="card"><div class="rank-no" style="border-top:0">※ 另有 ${noqTotal} 筆答錯屬「是非題未抓到題幹」（${Object.entries(noq).map(([j, n]) => j + " " + n).join("、")}），無法對應到單一題目、未列入排行；日後表單改版把是非題題幹一併記錄即可納入。</div></div>`;
+  return h;
+}
+
+// ---- 複測追蹤 ----
+function retestData() {
+  const map = new Map();
+  for (const r of ALL) {
+    if (!r.is_wrong) continue;
+    if (!jobOK(r)) continue;
+    if (!dateOK(r)) continue;
+    if (!qOK(r)) continue;
+    let p = map.get(r.name);
+    if (!p) { p = { name: r.name, emp_id: r.emp_id, jobs: new Set(), items: [], corrected: 0, notpass: 0 }; map.set(r.name, p); }
+    p.jobs.add(r.job_type); p.items.push(r);
+    if (r.passed) p.corrected++; else p.notpass++;
+    if (!p.emp_id && r.emp_id) p.emp_id = r.emp_id;
+  }
+  const arr = [...map.values()].map(p => ({ ...p, jobs: [...p.jobs], wrong: p.items.length }));
+  arr.sort((a, b) => b.notpass - a.notpass || b.wrong - a.wrong || a.name.localeCompare(b.name, "zh-Hant"));
+  return arr;
+}
+
+function renderRetest() {
+  const arr = retestData();
+  // 未通過名單（passed=false）
+  const np = ALL.filter(r => !r.passed && jobOK(r) && dateOK(r) && qOK(r))
+    .sort((a, b) => a.test_date.localeCompare(b.test_date));
+  let h = "";
+  h += `<div class="card"><h2>🔴 未通過名單 <span class="h2note">首測答錯且尚未補正（passed=否），需優先教導</span></h2>`;
+  if (!np.length) h += `<div class="empty">此範圍內沒有尚未補正的紀錄 🎉</div>`;
+  else {
+    h += `<div class="np">`;
+    for (const r of np) {
+      h += `<div class="npcard"><div class="nm">${nameLink(r.name)}
+        <span style="color:var(--muted);font-weight:600;font-size:12px">${esc(r.emp_id)}</span>
+        <span class="job">${r.job_type}</span><span style="font-size:12px;color:var(--muted);font-weight:600">${d2(r.test_date)}</span></div>
+        <div class="qq">${esc(r.question || "（是非題／當日題目）")}</div>
+        <div class="aa">選了 <span style="color:var(--warn);font-weight:700">${esc(r.chosen_option)}</span>　正解 <span style="color:var(--brand);font-weight:700">${esc(r.correct_option)}</span></div>
+      </div>`;
+    }
+    h += `</div>`;
+  }
+  h += `</div>`;
+
+  // 複測追蹤名冊
+  h += `<div class="card"><h2>📝 複測追蹤名冊 <span class="h2note">首測答錯者＝複測對象（依主管建議#2 常錯題複測）</span></h2>
+    <div class="tblwrap"><table><thead><tr>
+      <th>姓名</th><th>工號</th><th>工種</th><th class="num">首測答錯</th><th class="num">已補正</th><th class="num">未補正</th>
+      <th>複測結果</th><th>教導簽名</th></tr></thead><tbody>`;
+  if (!arr.length) h += `<tr><td colspan="8" class="empty">此範圍內沒有首測答錯者 🎉</td></tr>`;
+  for (const p of arr) {
+    h += `<tr>
+      <td>${nameLink(p.name)}</td><td style="color:var(--muted)">${esc(p.emp_id)}</td>
+      <td>${p.jobs.map(j => `<span class="job">${j}</span>`).join("")}</td>
+      <td class="num"><span class="pill warn">${p.wrong}</span></td>
+      <td class="num">${p.corrected ? `<span class="pill ok">${p.corrected}</span>` : "—"}</td>
+      <td class="num">${p.notpass ? `<span class="pill warn">${p.notpass}</span>` : "—"}</td>
+      <td>${retestResultCell(p.name)}</td>
+      <td style="color:var(--muted)">${retestSignCell(p.name)}</td>
+    </tr>`;
+  }
+  h += `</tbody></table></div>
+    <div class="rank-no">※「已補正／未補正」來自舊表單「答錯後依提示補答」機制（passed 欄）。「複測結果／教導簽名」為主管建議#2 的每月複測制欄位，已建立 Supabase <code>retest_records</code> 表；<b>填入複測分數／教導人／簽名日期後，此兩欄會自動顯示</b>（目前尚無複測資料，故顯示「待複測」）。複測題庫見「常錯題排行」分頁，空白複測卷見 retest-form.html。</div>
+  </div>`;
+  return h;
+}
+
+function renderDaily() {
+  const rate = dailyRate();
+  let h = "";
+  // 圖表：每日首測答對率
+  if (rate.length) {
+    const bars = rate.map(r => {
+      const hgt = Math.round(r.rate * 100);
+      const col = r.rate >= 0.95 ? "var(--brand2)" : r.rate >= 0.8 ? "var(--accent)" : "var(--warn)";
+      const mm = +r.date.slice(5, 7), dd = +r.date.slice(8, 10);
+      return `<div class="cbar" title="${r.date}　答對率 ${pct(r.rate)}（受測 ${r.n} 人日）">
+        <div class="cbar-track"><i style="height:${hgt}%;background:${col}"></i></div>
+        <div class="cbar-val">${(r.rate*100).toFixed(0)}</div><div class="cbar-x">${mm}/${dd}</div></div>`;
+    }).join("");
+    h += `<div class="card"><h2>📈 每日首測答對率（%）<span class="h2note">${state.job === "全部" ? "全工種合計" : state.job}　柱色：綠≥95%、藍≥80%、紅<80%</span></h2>
+      <div class="chart">${bars}</div></div>`;
+  }
+  // 逐日表
+  const arr = dailyData();
+  h += `<div class="card"><h2>逐日成效總覽</h2><div class="tblwrap"><table><thead><tr>
+    <th>日期</th><th>工種</th><th class="num">受測</th><th class="num">首測答錯</th><th class="num">首測答對率</th></tr></thead><tbody>`;
+  for (const d of arr) {
+    const rt = d.n ? (d.n - d.wrong) / d.n : 0;
+    h += `<tr><td>${esc(d.date)}</td><td><span class="job">${d.job}</span></td>
+      <td class="num">${d.n}</td><td class="num">${d.wrong ? `<span class="pill warn">${d.wrong}</span>` : "0"}</td>
+      <td class="num"><span class="rate">${pct(rt)}</span> <span class="mini"><i style="width:${(rt*100).toFixed(0)}%"></i></span></td></tr>`;
+  }
+  h += `</tbody></table></div></div>`;
+  return h;
+}
+
+// ---- 個人詳情 Modal ----
+function openPerson(name) {
+  const recs = ALL.filter(r => r.name === name)
+    .sort((a, b) => a.test_date.localeCompare(b.test_date) || a.job_type.localeCompare(b.job_type));
+  if (!recs.length) return;
+  const emp = recs.find(r => r.emp_id)?.emp_id || "";
+  const jobs = [...new Set(recs.map(r => r.job_type))];
+  const total = recs.length, wrong = recs.filter(r => r.is_wrong).length, notpass = recs.filter(r => !r.passed).length;
+  const company = companyOf(emp);
+  let b = `<div class="mhead"><div><div class="mt">${esc(name)}
+      ${jobs.map(j => `<span class="job">${j}</span>`).join("")}</div>
+      <div class="ms">工號 ${esc(emp) || "（無）"}　${company !== "其他" ? "· " + company : ""}</div></div>
+    <button class="mclose" id="mclose">✕</button></div>
+    <div class="mstat">
+      <div class="ms1">參加天數 <b>${total}</b></div>
+      <div class="ms1">首測答對 <b style="color:var(--brand)">${total - wrong}</b></div>
+      <div class="ms1">首測答錯 <b style="color:var(--warn)">${wrong}</b></div>
+      <div class="ms1">答對率 <b>${pct(total ? (total - wrong) / total : 0)}</b></div>
+      ${notpass ? `<div class="ms1">尚未補正 <b style="color:var(--warn)">${notpass}</b></div>` : ""}
+    </div>
+    <div class="mbody"><div class="tblwrap"><table><thead><tr>
+      <th>日期</th><th>工種</th><th>結果</th><th class="num">作答次數</th><th>題目</th><th>你的答案</th><th>正解</th>
+    </tr></thead><tbody>`;
+  for (const r of recs) {
+    const badge = r.is_wrong
+      ? (r.passed ? '<span class="pill ok">答錯·已補正</span>' : '<span class="pill warn">答錯·未通過</span>')
+      : '<span class="pill ok">答對</span>';
+    b += `<tr>
+      <td class="mdate">${esc(r.test_date)}</td><td><span class="job">${r.job_type}</span></td>
+      <td>${badge}</td><td class="num">${r.submissions ?? "—"}</td>
+      <td class="rank-q">${r.is_wrong ? esc(r.question || "（是非題／當日題目）") : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${r.is_wrong ? `<span class="wq"><span class="x">${esc(r.chosen_option)}</span></span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${r.is_wrong ? `<span class="o" style="color:var(--brand);font-weight:700">${esc(r.correct_option)}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+    </tr>`;
+  }
+  b += `</tbody></table></div></div>`;
+  document.getElementById("mbox").innerHTML = b;
+  document.getElementById("modal").classList.remove("hide");
+  document.getElementById("mclose").onclick = closePerson;
+}
+function closePerson() { document.getElementById("modal").classList.add("hide"); }
+document.getElementById("modal").onclick = e => { if (e.target.id === "modal") closePerson(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePerson(); });
+
+// ---- 匯出 CSV（依目前分頁與篩選） ----
+function csvCell(v) { v = (v ?? "").toString(); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function download(name, rows) {
+  const csv = "﻿" + rows.map(r => r.map(csvCell).join(",")).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+function exportCSV() {
+  const tag = `${state.job}_${state.from.slice(5)}-${state.to.slice(5)}`;
+  if (state.view === "people") {
+    const rows = [["姓名", "工號", "工種", "參加天數", "首測答對", "首測答錯", "答對率", "曾未通過"]];
+    for (const p of personRows()) rows.push([p.name, p.emp_id, p.jobs.join("/"), p.total, p.right, p.wrong, pct(p.rightRate), p.notpass]);
+    download(`人員成績表_${tag}.csv`, rows);
+  } else if (state.view === "wrong") {
+    const rows = [["姓名", "工號", "工種", "日期", "狀態", "題目", "你的答案", "正解"]];
+    for (const p of wrongData()) for (const r of p.items)
+      rows.push([p.name, p.emp_id, r.job_type, r.test_date, r.passed ? "已補正" : "未通過", r.question || "（是非題）", r.chosen_option, r.correct_option]);
+    download(`錯題統整_${tag}.csv`, rows);
+  } else if (state.view === "rank") {
+    const rows = [["工種", "名次", "題目", "答錯", "答錯率", "應答", "出現日期", "正解"]];
+    const { arr } = rankData();
+    const byJob = {}; arr.forEach(m => (byJob[m.job] ||= []).push(m));
+    for (const j of Object.keys(byJob)) byJob[j].forEach((m, i) => rows.push([j, i + 1, m.q, m.wrong, pct(m.pct), m.attempts, m.dates.map(d2).join("、"), m.correct]));
+    download(`常錯題排行_${tag}.csv`, rows);
+  } else if (state.view === "retest") {
+    const rows = [["姓名", "工號", "工種", "首測答錯", "已補正", "未補正", "複測結果", "教導簽名"]];
+    for (const p of retestData()) rows.push([p.name, p.emp_id, p.jobs.join("/"), p.wrong, p.corrected, p.notpass, "待複測", ""]);
+    download(`複測追蹤名冊_${tag}.csv`, rows);
+  } else {
+    const rows = [["日期", "工種", "受測", "首測答錯", "首測答對率"]];
+    for (const d of dailyData()) rows.push([d.date, d.job, d.n, d.wrong, pct(d.n ? (d.n - d.wrong) / d.n : 0)]);
+    download(`逐日總覽_${tag}.csv`, rows);
+  }
+}
+
+function bind() {
+  const blT = document.getElementById("blToggle"); if (blT) blT.onclick = () => { state.openBL = !state.openBL; render(); };
+  const nT = document.getElementById("noteToggle"); if (nT) nT.onclick = () => { state.openNote = !state.openNote; render(); };
+  document.querySelectorAll("#jobSeg button").forEach(b => b.onclick = () => { state.job = b.dataset.job; render(); });
+  document.querySelectorAll("#viewSeg button").forEach(b => b.onclick = () => { state.view = b.dataset.view; render(); });
+  document.querySelectorAll(".nameL").forEach(el => el.onclick = () => openPerson(el.dataset.person));
+  const q = document.getElementById("q");
+  if (q) {
+    let composing = false;
+    const applySearch = () => {
+      const pos = q.selectionStart; state.q = q.value; render();
+      const nq = document.getElementById("q");
+      if (nq) { nq.focus(); try { nq.setSelectionRange(pos, pos); } catch (_) {} }
+    };
+    q.addEventListener("compositionstart", () => { composing = true; });
+    q.addEventListener("compositionend", () => { composing = false; applySearch(); });
+    q.oninput = (e) => { if (composing || (e && e.isComposing)) { state.q = q.value; return; } applySearch(); };
+  }
+  const dFrom = document.getElementById("dFrom"), dTo = document.getElementById("dTo");
+  if (dFrom) dFrom.onchange = () => { state.from = dFrom.value; if (state.to < state.from) state.to = state.from; render(); };
+  if (dTo) dTo.onchange = () => { state.to = dTo.value; if (state.from > state.to) state.from = state.to; render(); };
+  const dReset = document.getElementById("dReset");
+  if (dReset) dReset.onclick = () => { state.from = DATES[0]; state.to = DATES[DATES.length - 1]; render(); };
+  document.querySelectorAll("th[data-sort]").forEach(th => th.onclick = () => {
+    const k = th.dataset.sort;
+    if (state.sortKey === k) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = (k === "name" || k === "emp_id") ? 1 : -1; }
+    render();
+  });
+}
+
+(async () => {
+  const app = document.getElementById("app");
+  if (!TOKEN) { app.innerHTML = `<div class="empty">🔒 此連結缺少存取權杖，請使用主管收到的完整連結。</div>`; return; }
+  try {
+    const res = await fetch(`${FN_URL}?k=${encodeURIComponent(TOKEN)}`, { cache: "no-store" });
+    if (res.status === 401) { app.innerHTML = `<div class="empty">🔒 存取權杖無效或已更換，請向管理者索取新連結。</div>`; return; }
+    if (!res.ok) throw new Error("讀取失敗 " + res.status);
+    const data = await res.json();
+    ALL = Array.isArray(data.rows) ? data.rows : [];
+    RETEST = Array.isArray(data.retest) ? data.retest : [];
+    DATES = [...new Set(ALL.map(r => r.test_date))].sort();
+    state.from = DATES[0]; state.to = DATES[DATES.length - 1];
+    render();
+  }
+  catch (e) { app.innerHTML = `<div class="empty">❌ ${esc(e.message)}</div>`; }
+})();
+</script>
+</body>
+</html>
