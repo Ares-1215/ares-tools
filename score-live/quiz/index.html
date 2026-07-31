@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>彰化轉運所 發送單位｜常錯題複測</title>
+<style>
+:root{
+  --bg:#f4f6f9;--card:#fff;--ink:#1a2330;--muted:#66738a;--line:#e3e8ef;
+  --brand:#0b6b3a;--brand2:#12945a;--accent:#1565c0;--warn:#c62828;--warnbg:#fdecea;
+  --okbg:#e8f5ec;--chip:#eef2f7;--shadow:0 1px 3px rgba(20,40,70,.08),0 6px 18px rgba(20,40,70,.05);
+}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;--line:#26313f;--brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;--warnbg:#3a1f22;--okbg:#183026;--chip:#1e2733;--shadow:0 1px 3px rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;--line:#26313f;--brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;--warnbg:#3a1f22;--okbg:#183026;--chip:#1e2733}
+:root[data-theme="light"]{--bg:#f4f6f9;--card:#fff;--ink:#1a2330;--muted:#66738a;--line:#e3e8ef;--brand:#0b6b3a;--brand2:#12945a;--accent:#1565c0;--warn:#c62828;--warnbg:#fdecea;--okbg:#e8f5ec;--chip:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.55;-webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:18px 15px 60px}
+.brandbar{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--brand2)}
+h1{font-size:19px;margin:0;font-weight:800}
+.sub{color:var(--muted);font-size:13px;margin:3px 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px 18px;margin-bottom:16px}
+label.fld{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:14px 0 6px}
+input[type=text]{width:100%;background:var(--bg);border:1.5px solid var(--line);color:var(--ink);border-radius:11px;padding:13px 14px;font-size:17px;font-family:inherit}
+input[type=text]:focus{outline:none;border-color:var(--brand2)}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.btn{display:block;width:100%;border:0;background:var(--brand);color:#fff;font-size:16px;font-weight:800;padding:14px;border-radius:12px;cursor:pointer;margin-top:20px;font-family:inherit}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sec{background:var(--chip);color:var(--ink)}
+.err{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:11px 13px;font-size:14px;font-weight:600;margin-top:14px;display:none}
+.err.show{display:block}
+.stickytop{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;margin:-4px 0 8px}
+.progress{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 13px;box-shadow:var(--shadow)}
+.progress .who{font-weight:800;font-size:14px}
+.progress .who small{color:var(--muted);font-weight:600;margin-left:6px}
+.progress .cnt{margin-left:auto;font-weight:800;font-size:14px;color:var(--brand2)}
+.bar{height:7px;background:var(--chip);border-radius:5px;overflow:hidden;margin-top:8px}
+.bar>i{display:block;height:100%;width:0;background:var(--brand2);transition:width .2s}
+.sec-h{font-size:14px;font-weight:800;margin:22px 4px 8px;display:flex;align-items:center;gap:8px}
+.sec-h .tag{font-size:11px;background:var(--chip);color:var(--muted);padding:2px 9px;border-radius:7px}
+.q{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:15px 16px;margin-bottom:12px}
+.q.unans{border-color:var(--line)}
+.q .qn{font-size:12px;font-weight:800;color:var(--brand2);margin-bottom:5px}
+.q .qt{font-size:15.5px;font-weight:600;margin-bottom:12px}
+.opt{display:flex;align-items:center;gap:11px;border:1.5px solid var(--line);border-radius:11px;padding:12px 13px;margin-top:9px;cursor:pointer;font-size:15px;transition:border-color .12s,background .12s}
+.opt input{width:20px;height:20px;accent-color:var(--brand2);flex:none}
+.opt.on{border-color:var(--brand2);background:var(--okbg)}
+.res-hero{text-align:center;padding:26px 18px}
+.res-hero .big{font-size:46px;font-weight:900;line-height:1}
+.res-hero .lab{font-size:15px;color:var(--muted);margin-top:6px}
+.badge{display:inline-block;font-size:15px;font-weight:900;padding:8px 20px;border-radius:999px;margin-top:14px}
+.badge.pass{background:var(--okbg);color:var(--brand)}
+.badge.fail{background:var(--warnbg);color:var(--warn)}
+.wrongitem{border-top:1px dashed var(--line);padding:12px 0}
+.wrongitem:first-child{border-top:0}
+.wrongitem .wq{font-size:14.5px;font-weight:600;margin-bottom:5px}
+.wrongitem .job{font-size:11px;font-weight:800;background:var(--chip);color:var(--muted);padding:1px 7px;border-radius:6px;margin-right:6px}
+.wrongitem .line{font-size:13.5px}
+.wrongitem .x{color:var(--warn);font-weight:700}
+.wrongitem .o{color:var(--brand);font-weight:700}
+.foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:24px}
+.spin{text-align:center;color:var(--muted);padding:40px 0;font-size:14px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brandbar"><span class="dot"></span><h1>常錯題複測</h1></div>
+  <div class="sub">彰化轉運所 發送單位 · 人員教育訓練</div>
+
+  <!-- ===== 登入 ===== -->
+  <section id="scLogin">
+    <div class="card">
+      <div style="font-weight:800;font-size:15px">請輸入工號與姓名進入測驗</div>
+      <label class="fld">工號</label>
+      <input id="emp" type="text" inputmode="numeric" autocomplete="off" placeholder="例：10017367">
+      <div class="hint">工號為 8 碼。新竹物流員工可只輸入 5 碼，系統會自動在前面補 0。</div>
+      <label class="fld">姓名</label>
+      <input id="name" type="text" autocomplete="off" placeholder="請填真實姓名">
+      <div id="loginErr" class="err"></div>
+      <button id="btnLogin" class="btn">開始測驗</button>
+    </div>
+    <div class="foot">工號或姓名與系統名冊不符將無法進入。測驗題目為現場常見答錯題。</div>
+  </section>
+
+  <!-- ===== 測驗 ===== -->
+  <section id="scQuiz" class="hide">
+    <div class="stickytop">
+      <div class="progress">
+        <div><span class="who" id="who"></span></div>
+        <div class="cnt"><span id="answered">0</span>/<span id="totalQ">0</span></div>
+      </div>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
+    <div id="quizBody"><div class="spin">題目載入中…</div></div>
+    <button id="btnSubmit" class="btn">交卷</button>
+    <button id="btnLogout" class="btn sec" style="margin-top:10px">重新輸入工號</button>
+    <div class="foot">全部答對才算通過；未通過可立即重新測驗。作答結果會回傳給訓練承辦追蹤。</div>
+  </section>
+
+  <!-- ===== 結果 ===== -->
+  <section id="scResult" class="hide">
+    <div class="card">
+      <div class="res-hero">
+        <div class="big" id="rScore"></div>
+        <div class="lab" id="rWho"></div>
+        <div id="rBadge"></div>
+      </div>
+    </div>
+    <div id="wrongCard" class="card hide">
+      <div style="font-weight:800;font-size:15px;margin-bottom:6px">答錯題目與正解</div>
+      <div id="wrongList"></div>
+    </div>
+    <button id="btnRetake" class="btn">重新測驗</button>
+    <button id="btnLogout2" class="btn sec" style="margin-top:10px">換人（重新輸入工號）</button>
+    <div class="foot">請記住上方正解，未通過者需複測至滿分。</div>
+  </section>
+</div>
+
+<script>
+const FN = "https://hmqnlovyzlvvnkqmfwtt.supabase.co/functions/v1/quiz";
+const K  = "chg-quiz-Rt7pM2xK9wLb";
+const JORDER = {"拆櫃":0,"拉線":1,"疊櫃":2};
+let USER=null, BANK=[], startedAt=0;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+async function api(action, opts={}){
+  const u = FN+"?k="+encodeURIComponent(K)+"&action="+action;
+  const r = await fetch(u, {cache:"no-store", ...opts});
+  return r.json();
+}
+
+/* ---------- 登入 ---------- */
+$("btnLogin").onclick = async ()=>{
+  const emp=$("emp").value.trim(), name=$("name").value.trim();
+  const err=$("loginErr");
+  err.classList.remove("show");
+  if(!emp||!name){ err.textContent="請輸入工號與姓名。"; err.classList.add("show"); return; }
+  $("btnLogin").disabled=true; $("btnLogin").textContent="驗證中…";
+  try{
+    const j = await api("login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({emp_id:emp,name})});
+    if(!j.ok){ err.textContent="工號或姓名不正確，無法進入。請確認後再試。"; err.classList.add("show"); return; }
+    USER=j;
+    await enterQuiz();
+  }catch(e){ err.textContent="連線失敗，請稍後再試。"; err.classList.add("show"); }
+  finally{ $("btnLogin").disabled=false; $("btnLogin").textContent="開始測驗"; }
+};
+$("emp").addEventListener("keydown",e=>{if(e.key==="Enter")$("name").focus()});
+$("name").addEventListener("keydown",e=>{if(e.key==="Enter")$("btnLogin").click()});
+
+/* ---------- 進入測驗 ---------- */
+async function enterQuiz(){
+  $("scLogin").classList.add("hide"); $("scResult").classList.add("hide");
+  $("scQuiz").classList.remove("hide");
+  $("who").innerHTML = esc(USER.name)+" <small>"+esc(USER.company||"")+"</small>";
+  if(!BANK.length){
+    const j = await api("bank");
+    BANK = (j.bank||[]).slice().sort((a,b)=>(JORDER[a.job_type]??9)-(JORDER[b.job_type]??9));
+  }
+  renderQuiz();
+  startedAt = Date.now();
+}
+function renderQuiz(){
+  let html="", lastJob=null;
+  BANK.forEach((q,i)=>{
+    if(q.job_type!==lastJob){
+      lastJob=q.job_type;
+      const n = BANK.filter(x=>x.job_type===q.job_type).length;
+      html+=`<div class="sec-h">${esc(q.job_type)}<span class="tag">${n} 題</span></div>`;
+    }
+    html+=`<div class="q unans" id="q_${i}"><div class="qn">第 ${i+1} 題</div><div class="qt">${esc(q.question)}</div>`;
+    q.options.forEach((o,oi)=>{
+      const rid=`o_${i}_${oi}`;
+      html+=`<label class="opt" for="${rid}"><input type="radio" id="${rid}" name="q_${i}" value="${esc(o)}" onchange="pick(${i},this)"><span>${esc(o)}</span></label>`;
+    });
+    html+=`</div>`;
+  });
+  $("quizBody").innerHTML=html;
+  $("totalQ").textContent=BANK.length;
+  updateProgress();
+}
+function pick(i,input){
+  const box=$("q_"+i);
+  box.querySelectorAll(".opt").forEach(l=>l.classList.remove("on"));
+  input.closest(".opt").classList.add("on");
+  box.classList.remove("unans");
+  updateProgress();
+}
+function answeredCount(){ return BANK.filter((_,i)=>document.querySelector(`input[name=q_${i}]:checked`)).length; }
+function updateProgress(){
+  const a=answeredCount();
+  $("answered").textContent=a;
+  $("barFill").style.width=(BANK.length?a/BANK.length*100:0)+"%";
+}
+
+/* ---------- 交卷 ---------- */
+$("btnSubmit").onclick = async ()=>{
+  const a=answeredCount();
+  if(a<BANK.length){
+    if(!confirm(`還有 ${BANK.length-a} 題未作答，未作答一律視為答錯。確定交卷？`)) return;
+  }
+  const answers=BANK.map((q,i)=>{
+    const sel=document.querySelector(`input[name=q_${i}]:checked`);
+    return {key:q.key, chosen:sel?sel.value:""};
+  });
+  $("btnSubmit").disabled=true; $("btnSubmit").textContent="送出中…";
+  try{
+    const j = await api("submit",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({emp_id:USER.emp_id,name:USER.name,answers,duration_sec:(Date.now()-startedAt)/1000})});
+    if(!j.ok){ alert("交卷失敗，請重試。"); return; }
+    showResult(j);
+  }catch(e){ alert("連線失敗，請重試。"); }
+  finally{ $("btnSubmit").disabled=false; $("btnSubmit").textContent="交卷"; }
+};
+
+/* ---------- 結果 ---------- */
+function showResult(j){
+  $("scQuiz").classList.add("hide"); $("scResult").classList.remove("hide");
+  window.scrollTo(0,0);
+  $("rScore").textContent = j.score+" / "+j.total;
+  $("rWho").textContent = USER.name+"（"+(USER.company||"")+"）";
+  $("rBadge").innerHTML = j.passed
+    ? `<span class="badge pass">✓ 通過（滿分）</span>`
+    : `<span class="badge fail">未通過 · 答錯 ${j.total-j.score} 題</span>`;
+  const wc=$("wrongCard");
+  if(j.wrong && j.wrong.length){
+    wc.classList.remove("hide");
+    $("wrongList").innerHTML = j.wrong.map(w=>`
+      <div class="wrongitem">
+        <div class="wq"><span class="job">${esc(w.job_type)}</span>${esc(w.question)}</div>
+        <div class="line">你的作答：<span class="x">${esc(w.chosen||"（未作答）")}</span>　正解：<span class="o">${esc(w.correct)}</span></div>
+      </div>`).join("");
+  }else{ wc.classList.add("hide"); }
+}
+$("btnRetake").onclick = ()=>enterQuiz();
+function logout(){ USER=null; $("emp").value=""; $("name").value="";
+  $("scQuiz").classList.add("hide"); $("scResult").classList.add("hide"); $("scLogin").classList.remove("hide"); window.scrollTo(0,0); }
+$("btnLogout").onclick=logout; $("btnLogout2").onclick=logout;
+</script>
+</body>
+</html>

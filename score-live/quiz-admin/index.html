@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>常錯題複測｜結果看板（承辦）</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--ink:#1a2330;--muted:#66738a;--line:#e3e8ef;--brand:#0b6b3a;--brand2:#12945a;--accent:#1565c0;--warn:#c62828;--warnbg:#fdecea;--okbg:#e8f5ec;--chip:#eef2f7;--shadow:0 1px 3px rgba(20,40,70,.08),0 6px 18px rgba(20,40,70,.05)}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;--line:#26313f;--brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;--warnbg:#3a1f22;--okbg:#183026;--chip:#1e2733;--shadow:0 1px 3px rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;--line:#26313f;--brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;--warnbg:#3a1f22;--okbg:#183026;--chip:#1e2733}
+:root[data-theme="light"]{--bg:#f4f6f9;--card:#fff;--ink:#1a2330;--muted:#66738a;--line:#e3e8ef;--brand:#0b6b3a;--brand2:#12945a;--accent:#1565c0;--warn:#c62828;--warnbg:#fdecea;--okbg:#e8f5ec;--chip:#eef2f7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding:18px 15px 60px}
+h1{font-size:19px;margin:0;font-weight:800;display:flex;align-items:center;gap:9px}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--brand2)}
+.sub{color:var(--muted);font-size:13px;margin:3px 0 16px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:var(--shadow)}
+.tile .k{font-size:12px;color:var(--muted);font-weight:600}
+.tile .v{font-size:24px;font-weight:800;margin-top:2px}
+.tile .v small{font-size:13px;color:var(--muted);font-weight:600}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+input[type=search]{flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit}
+select,.btn{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--muted);padding:7px 13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
+tbody tr:hover{background:var(--chip);cursor:pointer}
+.pill{font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px}
+.pill.ok{background:var(--okbg);color:var(--brand)}
+.pill.warn{background:var(--warnbg);color:var(--warn)}
+.pill.mut{background:var(--chip);color:var(--muted)}
+.job{font-size:11px;font-weight:800;background:var(--chip);color:var(--muted);padding:1px 7px;border-radius:6px;margin-right:3px}
+.lock{max-width:440px;margin:70px auto;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:34px 24px}
+.lock .em{font-size:40px}
+.spin{text-align:center;color:var(--muted);padding:44px 0}
+.hide{display:none}
+/* modal */
+.mask{position:fixed;inset:0;background:rgba(10,18,30,.55);display:none;align-items:flex-start;justify-content:center;padding:30px 14px;z-index:20;overflow:auto}
+.mask.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);max-width:640px;width:100%;padding:20px}
+.modal h3{margin:0 0 3px;font-size:17px}
+.modal .close{float:right;cursor:pointer;color:var(--muted);font-size:22px;line-height:1;border:0;background:none}
+.att{border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin-top:12px}
+.att .head{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px}
+.att .head .when{margin-left:auto;color:var(--muted);font-weight:600;font-size:12px}
+.wq{font-size:13px;color:var(--muted);padding:5px 0;border-top:1px dashed var(--line);margin-top:6px}
+.wq .qt{color:var(--ink)}.wq .x{color:var(--warn);font-weight:700}.wq .o{color:var(--brand);font-weight:700}
+.foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span class="dot"></span>常錯題複測 · 結果看板</h1>
+  <div class="sub">彰化轉運所 發送單位 · 人員教育訓練承辦專用</div>
+
+  <div id="lock" class="lock hide">
+    <div class="em">🔒</div>
+    <h2 style="margin:10px 0 4px">需要存取權杖</h2>
+    <p style="color:var(--muted);font-size:14px">此頁需在網址帶上正確的 <code>?k=</code> 權杖才能檢視結果。</p>
+  </div>
+
+  <div id="app" class="hide">
+    <div class="tiles">
+      <div class="tile"><div class="k">已測人數</div><div class="v" id="tPpl">–</div></div>
+      <div class="tile"><div class="k">通過人數</div><div class="v" id="tPass">–</div></div>
+      <div class="tile"><div class="k">未通過人數</div><div class="v" id="tFail">–</div></div>
+      <div class="tile"><div class="k">總測驗次數</div><div class="v" id="tAtt">–</div></div>
+    </div>
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="搜尋姓名 / 工號…">
+      <div class="seg" id="fltSeg">
+        <button data-f="all" class="on">全部</button>
+        <button data-f="pass">已通過</button>
+        <button data-f="fail">未通過</button>
+      </div>
+      <button class="btn" id="btnCsv">匯出 CSV</button>
+      <button class="btn" id="btnReload">重新整理</button>
+    </div>
+    <div class="card"><div class="tblwrap"><table id="tbl">
+      <thead><tr>
+        <th data-s="name">姓名</th><th data-s="emp_id">工號</th><th data-s="company">概估歸屬</th>
+        <th data-s="best">最佳成績</th><th data-s="passed">狀態</th>
+        <th data-s="attempts">測驗次數</th><th data-s="last">最後作答</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table></div></div>
+    <div class="foot" id="foot"></div>
+  </div>
+</div>
+
+<!-- 個人明細 -->
+<div class="mask" id="mask"><div class="modal">
+  <button class="close" id="mClose">×</button>
+  <h3 id="mName"></h3>
+  <div class="sub" id="mMeta"></div>
+  <div id="mBody"></div>
+</div></div>
+
+<script>
+const FN="https://hmqnlovyzlvvnkqmfwtt.supabase.co/functions/v1/quiz";
+const TOKEN=new URLSearchParams(location.search).get("k")||"";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let ROWS=[], PEOPLE=[], flt="all", sortKey="last", sortDir=-1;
+
+function fmt(ts){ if(!ts) return "–"; const d=new Date(ts);
+  const p=n=>String(n).padStart(2,"0");
+  return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+async function load(){
+  $("tbody").innerHTML=`<tr><td colspan="7"><div class="spin">載入中…</div></td></tr>`;
+  const r=await fetch(FN+"?k="+encodeURIComponent(TOKEN)+"&action=results",{cache:"no-store"});
+  if(r.status===401){ $("app").classList.add("hide"); $("lock").classList.remove("hide"); return; }
+  const j=await r.json();
+  ROWS=j.rows||[];
+  $("lock").classList.add("hide"); $("app").classList.remove("hide");
+  aggregate(); render();
+}
+function aggregate(){
+  const m=new Map();
+  for(const r of ROWS){
+    const key=r.emp_id+"|"+r.name;
+    let p=m.get(key);
+    if(!p){ p={name:r.name,emp_id:r.emp_id,company:r.company,attempts:0,best:-1,bestTotal:0,passed:false,last:null,lastRec:null,recs:[]}; m.set(key,p); }
+    p.attempts++; p.recs.push(r);
+    const ratio=r.total?r.score/r.total:0, bratio=p.bestTotal?p.best/p.bestTotal:0;
+    if(ratio>bratio){ p.best=r.score; p.bestTotal=r.total; }
+    if(r.passed) p.passed=true;
+    if(!p.last || r.created_at>p.last){ p.last=r.created_at; p.lastRec=r; }
+  }
+  PEOPLE=[...m.values()];
+  for(const p of PEOPLE) p.recs.sort((a,b)=>b.created_at.localeCompare(a.created_at));
+  $("tPpl").textContent=PEOPLE.length;
+  $("tPass").innerHTML=PEOPLE.filter(p=>p.passed).length;
+  $("tFail").innerHTML=`<span style="color:var(--warn)">${PEOPLE.filter(p=>!p.passed).length}</span>`;
+  $("tAtt").textContent=ROWS.length;
+}
+function filtered(){
+  const kw=$("q").value.trim().toLowerCase();
+  let arr=PEOPLE.filter(p=>{
+    if(flt==="pass"&&!p.passed) return false;
+    if(flt==="fail"&&p.passed) return false;
+    if(kw && !(p.name.toLowerCase().includes(kw)||p.emp_id.includes(kw))) return false;
+    return true;
+  });
+  const val=p=>({name:p.name,emp_id:p.emp_id,company:p.company||"",best:p.bestTotal?p.best/p.bestTotal:0,passed:p.passed?1:0,attempts:p.attempts,last:p.last||""}[sortKey]);
+  arr.sort((a,b)=>{const x=val(a),y=val(b); return (x>y?1:x<y?-1:0)*sortDir;});
+  return arr;
+}
+function render(){
+  const arr=filtered();
+  $("tbody").innerHTML = arr.length? arr.map((p,i)=>`
+    <tr onclick="detail(${PEOPLE.indexOf(p)})">
+      <td style="font-weight:700">${esc(p.name)}</td>
+      <td>${esc(p.emp_id)}</td>
+      <td><span class="job">${esc(p.company||"–")}</span></td>
+      <td>${p.best>=0?`${p.best}/${p.bestTotal}`:"–"}</td>
+      <td>${p.passed?'<span class="pill ok">已通過</span>':'<span class="pill warn">未通過</span>'}</td>
+      <td>${p.attempts}</td>
+      <td>${fmt(p.last)}</td>
+    </tr>`).join("") : `<tr><td colspan="7"><div class="spin">目前沒有符合條件的資料</div></td></tr>`;
+  $("foot").textContent=`共 ${PEOPLE.length} 人、${ROWS.length} 次作答　·　資料即時讀取自 Supabase`;
+}
+window.detail=function(idx){
+  const p=PEOPLE[idx]; if(!p) return;
+  $("mName").textContent=p.name;
+  $("mMeta").innerHTML=`工號 ${esc(p.emp_id)}　·　${esc(p.company||"–")}　·　${p.attempts} 次作答　·　`+
+    (p.passed?'<span class="pill ok">已通過</span>':'<span class="pill warn">未通過</span>');
+  $("mBody").innerHTML=p.recs.map(r=>{
+    const wrong=(r.answers||[]).filter(a=>!a.ok);
+    return `<div class="att">
+      <div class="head">${r.passed?'<span class="pill ok">通過</span>':'<span class="pill warn">未通過</span>'}
+        <span>${r.score}/${r.total}</span><span class="when">${fmt(r.created_at)}</span></div>
+      ${wrong.length? wrong.map(a=>`<div class="wq"><span class="job">${esc(a.job_type)}</span><span class="qt">${esc(a.question)}</span><br>作答 <span class="x">${esc(a.chosen||"（未作答）")}</span>　正解 <span class="o">${esc(a.correct)}</span></div>`).join("") : '<div class="wq" style="color:var(--brand)">全部答對 ✓</div>'}
+    </div>`;
+  }).join("");
+  $("mask").classList.add("show");
+};
+$("mClose").onclick=()=>$("mask").classList.remove("show");
+$("mask").onclick=e=>{ if(e.target===$("mask")) $("mask").classList.remove("show"); };
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("mask").classList.remove("show")});
+
+$("q").addEventListener("input",render);
+$("fltSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{
+  $("fltSeg").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); flt=b.dataset.f; render();
+});
+document.querySelectorAll("#tbl th").forEach(th=>th.onclick=()=>{
+  const k=th.dataset.s; if(!k) return;
+  if(sortKey===k) sortDir*=-1; else{ sortKey=k; sortDir=(k==="name"||k==="emp_id")?1:-1; }
+  render();
+});
+$("btnReload").onclick=load;
+$("btnCsv").onclick=()=>{
+  const head=["姓名","工號","概估歸屬","最佳分數","最佳總分","狀態","測驗次數","最後作答"];
+  const rows=filtered().map(p=>[p.name,p.emp_id,p.company||"",p.best>=0?p.best:"",p.bestTotal||"",p.passed?"已通過":"未通過",p.attempts,fmt(p.last)]);
+  const csv="﻿"+[head,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download="常錯題複測結果.csv"; a.click();
+};
+
+if(!TOKEN){ $("lock").classList.remove("hide"); }
+else load();
+</script>
+</body>
+</html>
