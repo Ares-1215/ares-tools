@@ -146,7 +146,7 @@
   <header class="top">
     <div>
       <h1>🏢 彰化轉運所 · 發送單位</h1>
-      <div class="sub">人員教育訓練成績管理　2026/07/01–07/28　拆櫃 · 拉線 · 疊櫃</div>
+      <div class="sub" id="subLine">人員教育訓練成績管理　拆櫃 · 拉線 · 疊櫃</div>
     </div>
     <div class="toolbtns noprint" style="display:flex;gap:8px">
       <button class="theme-btn" id="csvBtn">⬇ 匯出 CSV</button>
@@ -344,6 +344,8 @@ function renderBaseline() {
 
 function render() {
   const s = stats();
+  const sub = document.getElementById("subLine");
+  if (sub && DATES.length) sub.textContent = `人員教育訓練成績管理　${DATES[0].replace(/-/g, "/")}–${DATES[DATES.length - 1].slice(5).replace("-", "/")}　拆櫃 · 拉線 · 疊櫃`;
   const jobs = ["全部", "拆櫃", "拉線", "疊櫃"];
   let h = "";
   h += `<div class="tiles">
