@@ -131,7 +131,7 @@ function aggregate(){
     if(!p){ p={name:r.name,emp_id:r.emp_id,company:r.company,attempts:0,best:-1,bestTotal:0,passed:false,last:null,lastRec:null,recs:[]}; m.set(key,p); }
     p.attempts++; p.recs.push(r);
     const ratio=r.total?r.score/r.total:0, bratio=p.bestTotal?p.best/p.bestTotal:0;
-    if(ratio>bratio){ p.best=r.score; p.bestTotal=r.total; }
+    if(p.best<0||ratio>bratio){ p.best=r.score; p.bestTotal=r.total; }
     if(r.passed) p.passed=true;
     if(!p.last || r.created_at>p.last){ p.last=r.created_at; p.lastRec=r; }
   }
