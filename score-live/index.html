@@ -286,7 +286,7 @@ function retestSignCell(name) {
 // ---- 應測基準（每日）與人力公司對照 ----
 const EXPECT = { "拆櫃": 22, "拉線": 19, "疊櫃": 55 };
 const DIE_EXPECT = { "有根": 12, "丞閎": 17, "信林": 26 }; // 疊櫃 各人力公司每日應填
-const companyOf = emp => { const p = (emp || "").slice(0, 2);
+const companyOf = emp => { emp = (emp || "").trim(); if (emp.length > 8) return "其他"; const p = emp.slice(0, 2);
   return p === "10" ? "有根" : p === "20" ? "丞閎" : p === "30" ? "信林" : p === "00" ? "新竹物流正職" : "其他"; };
 
 function avgDistinctPerDay(rows, keyFn) {
