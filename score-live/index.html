@@ -175,11 +175,12 @@ const TOKEN = new URLSearchParams(location.search).get("k") || "";
 let ALL = [];      // all records
 let RETEST = [];   // retest_records（複測制，主管建議#2）
 let DATES = [];    // distinct sorted dates
-let state = { job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, openBL: false, openNote: false };
+let state = { job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, company: "全部", openBL: false, openNote: false };
 
 const dateOK = r => (!state.from || r.test_date >= state.from) && (!state.to || r.test_date <= state.to);
 const jobOK = r => state.job === "全部" || r.job_type === state.job;
 const qOK = r => { if (!state.q) return true; const q = state.q.trim(); return r.name.includes(q) || (r.emp_id || "").includes(q); };
+const companyOK = r => state.company === "全部" || companyOf(r.emp_id) === state.company;
 
 // ---- theme ----
 document.getElementById("themeBtn").onclick = () => {
@@ -195,6 +196,7 @@ function personRows() {
   const map = new Map();
   for (const r of ALL) {
     if (!jobOK(r)) continue;
+    if (!companyOK(r)) continue;
     if (!dateOK(r)) continue;
     let p = map.get(r.name);
     if (!p) { p = { name: r.name, emp_id: r.emp_id, total: 0, wrong: 0, notpass: 0, jobs: new Set() }; map.set(r.name, p); }
@@ -217,6 +219,7 @@ function wrongData() {
   for (const r of ALL) {
     if (!r.is_wrong) continue;
     if (!jobOK(r)) continue;
+    if (!companyOK(r)) continue;
     if (!dateOK(r)) continue;
     if (!qOK(r)) continue;
     if (!map.has(r.name)) map.set(r.name, []);
@@ -229,7 +232,7 @@ function wrongData() {
 }
 
 function stats() {
-  const rows = ALL.filter(r => jobOK(r) && dateOK(r));
+  const rows = ALL.filter(r => jobOK(r) && dateOK(r) && companyOK(r));
   const total = rows.length, wrong = rows.filter(r => r.is_wrong).length;
   const people = new Set(rows.map(r => r.name)).size;
   return { total, wrong, people, rightRate: total ? (total - wrong) / total : 0 };
@@ -239,6 +242,7 @@ function dailyData() {
   const map = new Map();
   for (const r of ALL) {
     if (!jobOK(r)) continue;
+    if (!companyOK(r)) continue;
     if (!dateOK(r)) continue;
     const key = r.test_date + "|" + r.job_type;
     let d = map.get(key); if (!d) { d = { date: r.test_date, job: r.job_type, n: 0, wrong: 0 }; map.set(key, d); }
@@ -252,6 +256,7 @@ function dailyRate() {
   const map = new Map();
   for (const r of ALL) {
     if (!jobOK(r)) continue;
+    if (!companyOK(r)) continue;
     if (!dateOK(r)) continue;
     let d = map.get(r.test_date); if (!d) { d = { date: r.test_date, n: 0, wrong: 0 }; map.set(r.test_date, d); }
     d.n++; if (r.is_wrong) d.wrong++;
@@ -383,8 +388,14 @@ function render() {
   </div>`;
 
   const dopt = (sel) => DATES.map(d => `<option value="${d}" ${d === sel ? "selected" : ""}>${d.slice(5)}</option>`).join("");
+  const COMP_ORDER = ["信林", "有根", "丞閎", "新竹物流正職", "其他"];
+  const compsPresent = ["全部", ...COMP_ORDER.filter(c => ALL.some(r => companyOf(r.emp_id) === c))];
+  const compOpts = compsPresent.map(c => `<option value="${c}" ${c === state.company ? "selected" : ""}>${c}</option>`).join("");
   h += `<div class="bar noprint" style="margin-top:-6px">
-    <span style="color:var(--muted);font-size:13px;font-weight:600">📅 日期區間</span>
+    <span style="color:var(--muted);font-size:13px;font-weight:600">🏢 人力公司</span>
+    <select id="compSel">${compOpts}</select>
+    ${state.company !== "全部" ? `<span style="color:var(--accent);font-size:12px;font-weight:700">僅 ${state.company}</span>` : ""}
+    <span style="color:var(--muted);font-size:13px;font-weight:600;margin-left:8px">📅 日期區間</span>
     <select id="dFrom">${dopt(state.from)}</select>
     <span style="color:var(--muted)">–</span>
     <select id="dTo">${dopt(state.to)}</select>
@@ -461,6 +472,7 @@ function rankData() {
   const noq = {}; // 無題幹（是非題未抓到題幹）的答錯數，依工種
   for (const r of ALL) {
     if (!jobOK(r)) continue;
+    if (!companyOK(r)) continue;
     if (!dateOK(r)) continue;
     if (!r.question) { if (r.is_wrong) noq[r.job_type] = (noq[r.job_type] || 0) + 1; continue; }
     const key = r.job_type + "" + r.question;
@@ -519,6 +531,7 @@ function retestData() {
   for (const r of ALL) {
     if (!r.is_wrong) continue;
     if (!jobOK(r)) continue;
+    if (!companyOK(r)) continue;
     if (!dateOK(r)) continue;
     if (!qOK(r)) continue;
     let p = map.get(r.name);
@@ -535,7 +548,7 @@ function retestData() {
 function renderRetest() {
   const arr = retestData();
   // 未通過名單（passed=false）
-  const np = ALL.filter(r => !r.passed && jobOK(r) && dateOK(r) && qOK(r))
+  const np = ALL.filter(r => !r.passed && jobOK(r) && dateOK(r) && companyOK(r) && qOK(r))
     .sort((a, b) => a.test_date.localeCompare(b.test_date));
   let h = "";
   h += `<div class="card"><h2>🔴 未通過名單 <span class="h2note">首測答錯且尚未補正（passed=否），需優先教導</span></h2>`;
@@ -710,6 +723,8 @@ function bind() {
   if (dTo) dTo.onchange = () => { state.to = dTo.value; if (state.from > state.to) state.from = state.to; render(); };
   const dReset = document.getElementById("dReset");
   if (dReset) dReset.onclick = () => { state.from = DATES[0]; state.to = DATES[DATES.length - 1]; render(); };
+  const compSel = document.getElementById("compSel");
+  if (compSel) compSel.onchange = () => { state.company = compSel.value; render(); };
   document.querySelectorAll("th[data-sort]").forEach(th => th.onclick = () => {
     const k = th.dataset.sort;
     if (state.sortKey === k) state.sortDir *= -1; else { state.sortKey = k; state.sortDir = (k === "name" || k === "emp_id") ? 1 : -1; }
