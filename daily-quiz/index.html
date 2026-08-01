@@ -89,7 +89,7 @@ async function api(action, opts={}){
   return res.json();
 }
 
-let STATE = { questions: [], answers: {}, deadline: 0, startTs: 0, emp: "", name: "", center: "", timer: null };
+let STATE = { questions: [], answers: {}, deadline: 0, startTs: 0, emp: "", name: "", center: "", unit: "", timer: null };
 
 function fmtLeft(ms){
   if(ms<=0) return "已截止";
@@ -115,6 +115,12 @@ function renderLogin(){
   <div class="card">
     <label>轉運中心</label>
     <select id="center"><option>載入中…</option></select>
+    <label>單位</label>
+    <select id="unit">
+      <option value="">請選擇單位</option>
+      <option value="發送單位">發送單位</option>
+      <option value="到著單位">到著單位</option>
+    </select>
     <label>工號</label>
     <input id="emp" inputmode="numeric" placeholder="請輸入工號" value="${esc(savedEmp())}" autocomplete="off">
     <div class="hint">外包工號為 <b>8 碼</b>。（有根人力公司→工號 <b>10</b> 開頭、丞閎人力公司→工號 <b>20</b> 開頭、信林人力公司→工號 <b>30</b> 開頭）＋身分證字號後 6 碼。<br>新竹物流員工可只輸入 <b>5 碼</b>，系統會自動在前面補 0。</div>
@@ -126,16 +132,19 @@ function renderLogin(){
   loadCenters(document.getElementById("center")).then(()=>{
     const c = localStorage.getItem("daily_center"); if(c) document.getElementById("center").value = c;
   });
+  const u = localStorage.getItem("daily_unit"); if(u) document.getElementById("unit").value = u;
   document.getElementById("go").onclick = doLogin;
 }
 
 async function doLogin(){
   const center = document.getElementById("center").value.trim();
+  const unit = document.getElementById("unit").value.trim();
   const emp = document.getElementById("emp").value.trim();
   const name = document.getElementById("name").value.trim();
   const lock = document.getElementById("lock");
   lock.textContent = "";
   if(!center){ lock.textContent = "請選擇轉運中心。"; return; }
+  if(!unit){ lock.textContent = "請選擇單位（發送／到著）。"; return; }
   if(!emp){ lock.textContent = "請輸入工號。"; return; }
   if(!name){ lock.textContent = "請輸入姓名。"; return; }
   const btn = document.getElementById("go"); btn.disabled = true; btn.textContent = "登入中…";
@@ -150,7 +159,8 @@ async function doLogin(){
   localStorage.setItem("daily_emp", r.emp_id);
   localStorage.setItem("daily_name", name);
   localStorage.setItem("daily_center", center);
-  STATE = { ...STATE, emp:r.emp_id, name, center, questions:r.questions, deadline:r.deadline, answers:{}, startTs:Date.now() };
+  localStorage.setItem("daily_unit", unit);
+  STATE = { ...STATE, emp:r.emp_id, name, center, unit, questions:r.questions, deadline:r.deadline, answers:{}, startTs:Date.now() };
   if(r.already_done){ renderDone(r.last); return; }
   if(r.past){ renderBlocked(); return; }
   renderQuiz(r.company);
@@ -169,7 +179,7 @@ function renderQuiz(company){
   app.innerHTML = `
     <div class="bar">⏳ 距截止：<span class="cd" id="cd"></span></div>
     <div class="card" style="padding:12px 14px">
-      <div style="font-size:14px;color:var(--muted)">作答人：<b style="color:var(--ink)">${esc(STATE.name)}</b>（${esc(STATE.emp)}／${esc(company||"")}）· ${esc(STATE.center)}</div>
+      <div style="font-size:14px;color:var(--muted)">作答人：<b style="color:var(--ink)">${esc(STATE.name)}</b>（${esc(STATE.emp)}／${esc(company||"")}）· ${esc(STATE.center)}${STATE.unit?" · "+esc(STATE.unit):""}</div>
     </div>
     ${qhtml}
     <button id="submit">交卷</button>
@@ -202,7 +212,7 @@ async function doSubmit(){
   const btn = document.getElementById("submit"); btn.disabled = true; btn.textContent = "交卷中…";
   const answers = STATE.questions.map(q=>({ id:q.id, chosen:STATE.answers[q.id] }));
   const r = await api("submit", { body:{
-    emp_id:STATE.emp, name:STATE.name, center:STATE.center, device_id:deviceId(),
+    emp_id:STATE.emp, name:STATE.name, center:STATE.center, unit:STATE.unit, device_id:deviceId(),
     duration_sec:Math.round((Date.now()-STATE.startTs)/1000), answers } });
   clearInterval(STATE.timer);
   if(!r.ok){

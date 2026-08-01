@@ -185,7 +185,7 @@ let RESULTS = [];   // daily_results 原始（跨日）
 let FLAT = [];      // 逐題攤平：{name,emp_id,job_type,test_date,question,chosen_option,correct_option,is_wrong,center,duration_sec,created_at,daypass}
 let DATES = [];
 let RANGE_LOADED = false;
-let bs = { view:"board", job:"全部", q:"", company:"全部", center:"全部", from:"", to:"", year:"全部", month:"全部",
+let bs = { view:"board", job:"全部", q:"", company:"全部", center:"全部", unit:"全部", from:"", to:"", year:"全部", month:"全部",
   boardDate: todayStr(), sortKey:"wrongRate", sortDir:-1 };
 
 async function loadRange(){
@@ -197,7 +197,7 @@ async function loadRange(){
     for(const a of (res.answers||[])){
       FLAT.push({ name:res.name, emp_id:res.emp_id, job_type:a.job_type, test_date:res.test_date,
         question:a.question, chosen_option:a.chosen, correct_option:a.correct, is_wrong:!a.ok,
-        center:res.center, duration_sec:res.duration_sec, created_at:res.created_at, daypass });
+        center:res.center, unit:res.unit, duration_sec:res.duration_sec, created_at:res.created_at, daypass });
     }
   }
   DATES = [...new Set(RESULTS.map(r=>r.test_date))].sort();
@@ -217,12 +217,14 @@ const dateOK = r => (!bs.from || r.test_date>=bs.from) && (!bs.to || r.test_date
 const jobOK  = r => bs.job==="全部" || r.job_type===bs.job;
 const compOK = r => bs.company==="全部" || companyOf(r.emp_id)===bs.company;
 const centerOK = r => bs.center==="全部" || (r.center||"")===bs.center;
+const unitOK = r => bs.unit==="全部" || (r.unit||"")===bs.unit;
 const qOK    = r => { if(!bs.q) return true; const q=bs.q.trim(); return (r.name||"").includes(q) || (r.emp_id||"").includes(q); };
-const flatScoped = () => FLAT.filter(r => jobOK(r) && dateOK(r) && compOK(r) && centerOK(r));
-// 當日明細用：依當日 + 公司 + 中心 篩 RESULTS
+const flatScoped = () => FLAT.filter(r => jobOK(r) && dateOK(r) && compOK(r) && centerOK(r) && unitOK(r));
+// 當日明細用：依當日 + 中心 + 單位 + 公司 篩 RESULTS
 const boardRows = () => RESULTS.filter(r => r.test_date===bs.boardDate
-  && (bs.company==="全部" || companyOf(r.emp_id)===bs.company)
-  && (bs.center==="全部" || (r.center||"")===bs.center));
+  && (bs.center==="全部" || (r.center||"")===bs.center)
+  && (bs.unit==="全部" || (r.unit||"")===bs.unit)
+  && (bs.company==="全部" || companyOf(r.emp_id)===bs.company));
 
 function draw(){
   const compsPresent = ["全部", ...COMP_ORDER.filter(c=>RESULTS.some(r=>companyOf(r.emp_id)===c))];
@@ -230,6 +232,10 @@ function draw(){
   const centersPresent = ["全部", ...[...new Set(RESULTS.map(r=>r.center).filter(Boolean))].sort()];
   if(!centersPresent.includes(bs.center)) bs.center="全部";
   const centerOpts = centersPresent.map(c=>`<option value="${esc(c)}" ${c===bs.center?"selected":""}>${c==="全部"?"全部中心":esc(c)}</option>`).join("");
+  const UNIT_ORDER = ["發送單位","到著單位"];
+  const unitsPresent = ["全部", ...UNIT_ORDER, ...[...new Set(RESULTS.map(r=>r.unit).filter(u=>u&&!UNIT_ORDER.includes(u)))].sort()];
+  if(!unitsPresent.includes(bs.unit)) bs.unit="全部";
+  const unitOpts = unitsPresent.map(u=>`<option value="${esc(u)}" ${u===bs.unit?"selected":""}>${u==="全部"?"全部單位":esc(u)}</option>`).join("");
   const scoped = DATES.filter(d=>(bs.year==="全部"||d.slice(0,4)===bs.year)&&(bs.month==="全部"||d.slice(5,7)===bs.month));
   const dopt = sel => scoped.map(d=>`<option value="${d}" ${d===sel?"selected":""}>${d.slice(5)}</option>`).join("");
   const years = ["全部", ...[...new Set(DATES.map(d=>d.slice(0,4)))].sort()];
@@ -251,6 +257,8 @@ function draw(){
       <span class="muted" style="font-size:13px;font-weight:600">📅 今日 ${bs.boardDate}</span>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🚚 中心</span>
       <select id="centerSel">${centerOpts}</select>
+      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">📦 單位</span>
+      <select id="unitSel">${unitOpts}</select>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🏢 公司</span>
       <select id="compSel">${compOpts}</select>
       <button class="sec" id="rf">🔄 重新整理</button></div>`;
@@ -259,6 +267,8 @@ function draw(){
       <div class="seg" id="jobSeg">${jobs.map(j=>`<button class="${bs.job===j?"on":""}" data-job="${j}">${j}</button>`).join("")}</div>
       <span class="muted" style="font-size:13px;font-weight:600">🚚 中心</span>
       <select id="centerSel">${centerOpts}</select>
+      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">📦 單位</span>
+      <select id="unitSel">${unitOpts}</select>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🏢 公司</span>
       <select id="compSel">${compOpts}</select>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">📅 期間</span>
@@ -288,6 +298,7 @@ function bindBar(){
   const rf = document.getElementById("rf"); if(rf) rf.onclick = async ()=>{ RANGE_LOADED=false; await renderBoard(); };
   const cs = document.getElementById("compSel"); if(cs) cs.onchange=()=>{ bs.company=cs.value; draw(); };
   const ce = document.getElementById("centerSel"); if(ce) ce.onchange=()=>{ bs.center=ce.value; draw(); };
+  const un = document.getElementById("unitSel"); if(un) un.onchange=()=>{ bs.unit=un.value; draw(); };
   const yS = document.getElementById("ySel"); if(yS) yS.onchange=()=>{ bs.year=yS.value; bs.month="全部";
     const ds=DATES.filter(d=>bs.year==="全部"||d.slice(0,4)===bs.year); bs.from=ds[0]; bs.to=ds[ds.length-1]; draw(); };
   const mS = document.getElementById("mSel"); if(mS) mS.onchange=()=>{ bs.month=mS.value;
@@ -348,7 +359,7 @@ function renderBoardDay(){
   const body = rows.map(r=>{
     const ans = (r.answers||[]).map(a=>`<div class="ans"><span class="${a.ok?'r':'w'}">${a.ok?'✔':'✘'}</span> 【${esc(a.job_type)}】${esc(a.question)}<br>作答：${esc(a.chosen||'（未答）')}${a.ok?'':` → 正解：<b>${esc(a.correct)}</b>`}</div>`).join("");
     return `<tr>
-      <td>${esc(r.center||'')}</td><td>${esc(companyOf(r.emp_id))}</td><td><code>${esc(r.emp_id)}</code></td>
+      <td>${esc(r.center||'')}</td><td>${esc(r.unit||'')}</td><td>${esc(companyOf(r.emp_id))}</td><td><code>${esc(r.emp_id)}</code></td>
       <td>${nameLink(r.name)}</td>
       <td>${r.score}/${r.total} <span class="pill ${r.passed?'ok':'warn'}">${r.passed?'通過':'未過'}</span></td>
       <td>${r.duration_sec!=null?r.duration_sec+'s':''}</td>
@@ -356,7 +367,7 @@ function renderBoardDay(){
       <td><details><summary>明細</summary>${ans}</details></td></tr>`;
   }).join("");
   el.innerHTML = `<div class="card pad0"><h2>${bs.boardDate} 當日明細 <span class="h2note">${rows.length} 人已交卷</span></h2>
-    <div class="tblwrap"><table><thead><tr><th>中心</th><th>公司</th><th>工號</th><th>姓名</th><th>分數</th><th>用時</th><th>交卷</th><th>答題</th></tr></thead>
+    <div class="tblwrap"><table><thead><tr><th>中心</th><th>單位</th><th>公司</th><th>工號</th><th>姓名</th><th>分數</th><th>用時</th><th>交卷</th><th>答題</th></tr></thead>
     <tbody>${body}</tbody></table></div></div>`;
 }
 
@@ -558,8 +569,8 @@ function exportCsv(){
   if(bs.view==="board"){
     const rows = boardRows();
     if(!rows.length){ alert("無資料"); return; }
-    const out=[["日期","中心","公司","工號","姓名","分數","滿分","通過","用時秒","交卷時間"]];
-    for(const r of rows) out.push([r.test_date,r.center||"",companyOf(r.emp_id),r.emp_id,r.name,r.score,r.total,r.passed?"是":"否",r.duration_sec??"",new Date(r.created_at).toLocaleString("zh-TW")]);
+    const out=[["日期","中心","單位","公司","工號","姓名","分數","滿分","通過","用時秒","交卷時間"]];
+    for(const r of rows) out.push([r.test_date,r.center||"",r.unit||"",companyOf(r.emp_id),r.emp_id,r.name,r.score,r.total,r.passed?"是":"否",r.duration_sec??"",new Date(r.created_at).toLocaleString("zh-TW")]);
     download(`每日測驗_${bs.boardDate}.csv`, out);
   } else if(bs.view==="people"){
     const out=[["姓名","工號","工種","參加天數","答題數","答對","答錯","答對率","未全對天數"]];
