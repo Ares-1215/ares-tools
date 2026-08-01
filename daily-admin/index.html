@@ -238,10 +238,9 @@ function draw(){
   </div>`;
 
   if(bs.view==="board"){
+    bs.boardDate = todayStr();
     h += `<div class="bar noprint">
-      <span class="muted" style="font-size:13px;font-weight:600">📅 日期</span>
-      <input type="date" id="bd" value="${bs.boardDate}">
-      <button class="sec" id="today">今天</button>
+      <span class="muted" style="font-size:13px;font-weight:600">📅 今日 ${bs.boardDate}</span>
       <button class="sec" id="rf">🔄 重新整理</button></div>`;
   } else {
     h += `<div class="bar noprint">
@@ -273,8 +272,6 @@ function bindBar(){
   document.querySelectorAll("#viewSeg button").forEach(b=>b.onclick=()=>{ bs.view=b.dataset.view; draw(); });
   const js = document.getElementById("jobSeg"); if(js) js.querySelectorAll("button").forEach(b=>b.onclick=()=>{ bs.job=b.dataset.job; draw(); });
   const rf = document.getElementById("rf"); if(rf) rf.onclick = async ()=>{ RANGE_LOADED=false; await renderBoard(); };
-  const bd = document.getElementById("bd"); if(bd) bd.onchange=()=>{ bs.boardDate=bd.value; draw(); };
-  const td = document.getElementById("today"); if(td) td.onclick=()=>{ bs.boardDate=todayStr(); draw(); };
   const cs = document.getElementById("compSel"); if(cs) cs.onchange=()=>{ bs.company=cs.value; draw(); };
   const yS = document.getElementById("ySel"); if(yS) yS.onchange=()=>{ bs.year=yS.value; bs.month="全部";
     const ds=DATES.filter(d=>bs.year==="全部"||d.slice(0,4)===bs.year); bs.from=ds[0]; bs.to=ds[ds.length-1]; draw(); };
