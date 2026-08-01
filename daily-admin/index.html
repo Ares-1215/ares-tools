@@ -185,7 +185,7 @@ let RESULTS = [];   // daily_results 原始（跨日）
 let FLAT = [];      // 逐題攤平：{name,emp_id,job_type,test_date,question,chosen_option,correct_option,is_wrong,center,duration_sec,created_at,daypass}
 let DATES = [];
 let RANGE_LOADED = false;
-let bs = { view:"board", job:"全部", q:"", company:"全部", from:"", to:"", year:"全部", month:"全部",
+let bs = { view:"board", job:"全部", q:"", company:"全部", center:"全部", from:"", to:"", year:"全部", month:"全部",
   boardDate: todayStr(), sortKey:"wrongRate", sortDir:-1 };
 
 async function loadRange(){
@@ -216,12 +216,20 @@ async function renderBoard(){
 const dateOK = r => (!bs.from || r.test_date>=bs.from) && (!bs.to || r.test_date<=bs.to);
 const jobOK  = r => bs.job==="全部" || r.job_type===bs.job;
 const compOK = r => bs.company==="全部" || companyOf(r.emp_id)===bs.company;
+const centerOK = r => bs.center==="全部" || (r.center||"")===bs.center;
 const qOK    = r => { if(!bs.q) return true; const q=bs.q.trim(); return (r.name||"").includes(q) || (r.emp_id||"").includes(q); };
-const flatScoped = () => FLAT.filter(r => jobOK(r) && dateOK(r) && compOK(r));
+const flatScoped = () => FLAT.filter(r => jobOK(r) && dateOK(r) && compOK(r) && centerOK(r));
+// 當日明細用：依當日 + 公司 + 中心 篩 RESULTS
+const boardRows = () => RESULTS.filter(r => r.test_date===bs.boardDate
+  && (bs.company==="全部" || companyOf(r.emp_id)===bs.company)
+  && (bs.center==="全部" || (r.center||"")===bs.center));
 
 function draw(){
   const compsPresent = ["全部", ...COMP_ORDER.filter(c=>RESULTS.some(r=>companyOf(r.emp_id)===c))];
   const compOpts = compsPresent.map(c=>`<option value="${c}" ${c===bs.company?"selected":""}>${c}</option>`).join("");
+  const centersPresent = ["全部", ...[...new Set(RESULTS.map(r=>r.center).filter(Boolean))].sort()];
+  if(!centersPresent.includes(bs.center)) bs.center="全部";
+  const centerOpts = centersPresent.map(c=>`<option value="${esc(c)}" ${c===bs.center?"selected":""}>${c==="全部"?"全部中心":esc(c)}</option>`).join("");
   const scoped = DATES.filter(d=>(bs.year==="全部"||d.slice(0,4)===bs.year)&&(bs.month==="全部"||d.slice(5,7)===bs.month));
   const dopt = sel => scoped.map(d=>`<option value="${d}" ${d===sel?"selected":""}>${d.slice(5)}</option>`).join("");
   const years = ["全部", ...[...new Set(DATES.map(d=>d.slice(0,4)))].sort()];
@@ -241,12 +249,18 @@ function draw(){
     bs.boardDate = todayStr();
     h += `<div class="bar noprint">
       <span class="muted" style="font-size:13px;font-weight:600">📅 今日 ${bs.boardDate}</span>
+      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🏢 公司</span>
+      <select id="compSel">${compOpts}</select>
+      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🚚 中心</span>
+      <select id="centerSel">${centerOpts}</select>
       <button class="sec" id="rf">🔄 重新整理</button></div>`;
   } else {
     h += `<div class="bar noprint">
       <div class="seg" id="jobSeg">${jobs.map(j=>`<button class="${bs.job===j?"on":""}" data-job="${j}">${j}</button>`).join("")}</div>
       <span class="muted" style="font-size:13px;font-weight:600">🏢 公司</span>
       <select id="compSel">${compOpts}</select>
+      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🚚 中心</span>
+      <select id="centerSel">${centerOpts}</select>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">📅 期間</span>
       <select id="ySel">${yearOpts}</select><select id="mSel">${monthOpts}</select>
       <select id="dFrom">${dopt(bs.from)}</select><span class="muted">–</span><select id="dTo">${dopt(bs.to)}</select>
@@ -273,6 +287,7 @@ function bindBar(){
   const js = document.getElementById("jobSeg"); if(js) js.querySelectorAll("button").forEach(b=>b.onclick=()=>{ bs.job=b.dataset.job; draw(); });
   const rf = document.getElementById("rf"); if(rf) rf.onclick = async ()=>{ RANGE_LOADED=false; await renderBoard(); };
   const cs = document.getElementById("compSel"); if(cs) cs.onchange=()=>{ bs.company=cs.value; draw(); };
+  const ce = document.getElementById("centerSel"); if(ce) ce.onchange=()=>{ bs.center=ce.value; draw(); };
   const yS = document.getElementById("ySel"); if(yS) yS.onchange=()=>{ bs.year=yS.value; bs.month="全部";
     const ds=DATES.filter(d=>bs.year==="全部"||d.slice(0,4)===bs.year); bs.from=ds[0]; bs.to=ds[ds.length-1]; draw(); };
   const mS = document.getElementById("mSel"); if(mS) mS.onchange=()=>{ bs.month=mS.value;
@@ -300,7 +315,7 @@ function bindBar(){
 function renderTiles(){
   const el = document.getElementById("tiles");
   if(bs.view==="board"){
-    const rows = RESULTS.filter(r=>r.test_date===bs.boardDate);
+    const rows = boardRows();
     const passed = rows.filter(r=>r.passed).length;
     const byC = {}; for(const r of rows){ const c=companyOf(r.emp_id); byC[c]=(byC[c]||{done:0,pass:0}); byC[c].done++; if(r.passed) byC[c].pass++; }
     const comp = Object.entries(byC).map(([k,v])=>`${k} ${v.done}人(過${v.pass})`).join("　")||"—";
@@ -326,10 +341,10 @@ function renderTiles(){
 
 // ---- 當日明細（原看板）----
 function renderBoardDay(){
-  let rows = RESULTS.filter(r=>r.test_date===bs.boardDate);
+  let rows = boardRows();
   if(bs.q){ const q=bs.q.trim(); rows = rows.filter(r=>(r.name||"").includes(q)||(r.emp_id||"").includes(q)); }
   const el = document.getElementById("body");
-  if(!rows.length){ el.innerHTML = `<div class="card"><div class="empty">${bs.boardDate} 尚無人作答。</div></div>`; return; }
+  if(!rows.length){ el.innerHTML = `<div class="card"><div class="empty">${bs.boardDate} 尚無符合條件的作答。</div></div>`; return; }
   const body = rows.map(r=>{
     const ans = (r.answers||[]).map(a=>`<div class="ans"><span class="${a.ok?'r':'w'}">${a.ok?'✔':'✘'}</span> 【${esc(a.job_type)}】${esc(a.question)}<br>作答：${esc(a.chosen||'（未答）')}${a.ok?'':` → 正解：<b>${esc(a.correct)}</b>`}</div>`).join("");
     return `<tr>
@@ -541,7 +556,7 @@ function download(name, rows){
 }
 function exportCsv(){
   if(bs.view==="board"){
-    const rows = RESULTS.filter(r=>r.test_date===bs.boardDate);
+    const rows = boardRows();
     if(!rows.length){ alert("無資料"); return; }
     const out=[["日期","中心","公司","工號","姓名","分數","滿分","通過","用時秒","交卷時間"]];
     for(const r of rows) out.push([r.test_date,r.center||"",companyOf(r.emp_id),r.emp_id,r.name,r.score,r.total,r.passed?"是":"否",r.duration_sec??"",new Date(r.created_at).toLocaleString("zh-TW")]);
