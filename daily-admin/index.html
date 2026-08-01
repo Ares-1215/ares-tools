@@ -11,48 +11,122 @@
   @media (prefers-color-scheme:dark){:root{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;
     --line:#26313f;--brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;--warnbg:#3a1f22;
     --okbg:#183026;--chip:#1e2733;--shadow:0 1px 3px rgba(0,0,0,.4)}}
+  :root[data-theme="dark"]{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;--line:#26313f;
+    --brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;--warnbg:#3a1f22;--okbg:#183026;--chip:#1e2733}
+  :root[data-theme="light"]{--bg:#f4f6f9;--card:#fff;--ink:#1a2330;--muted:#66738a;--line:#e3e8ef;
+    --brand:#0b6b3a;--brand2:#12945a;--accent:#1565c0;--warn:#c62828;--warnbg:#fdecea;--okbg:#e8f5ec;--chip:#eef2f7}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:"Segoe UI",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.55}
-  .wrap{max-width:1200px;margin:0 auto;padding:16px 16px 60px}
+  .wrap{max-width:1400px;margin:0 auto;padding:16px 16px 60px}
+  header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
   h1{font-size:20px;margin:0 0 2px;font-weight:800}
   .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .toolbtns{display:flex;gap:8px;flex-wrap:wrap}
+  .theme-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:9px;padding:7px 10px;cursor:pointer;font-size:13px}
+  .theme-btn:hover{color:var(--ink)}
   .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
   .tabs button{border:0;background:var(--chip);color:var(--muted);padding:9px 16px;border-radius:10px;
     font-size:14px;font-weight:700;cursor:pointer}
   .tabs button.on{background:var(--brand);color:#fff}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
     padding:16px;margin-bottom:16px}
+  .card.pad0{padding:0;overflow:hidden}
+  .card h2{font-size:15px;margin:0;padding:13px 16px;border-bottom:1px solid var(--line);font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card h2 .h2note{font-weight:600;font-size:12px;color:var(--muted)}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-  input,select{background:var(--bg);border:1.5px solid var(--line);color:var(--ink);border-radius:9px;
+  input,select,textarea{background:var(--bg);border:1.5px solid var(--line);color:var(--ink);border-radius:9px;
     padding:9px 11px;font-size:14px}
+  input[type=search]{flex:1;min-width:170px}
   button.act{border:0;background:var(--brand);color:#fff;border-radius:9px;padding:9px 15px;
     font-size:14px;font-weight:700;cursor:pointer}
   button.sec{background:var(--chip);color:var(--ink)}
-  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
-  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+  .seg button{border:0;background:transparent;color:var(--muted);padding:7px 13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+  .seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
   .tile .k{font-size:12px;color:var(--muted);font-weight:600}
   .tile .v{font-size:24px;font-weight:800;margin-top:2px}
+  .tile .v small{font-size:13px;color:var(--muted);font-weight:600}
   table{border-collapse:collapse;width:100%;font-size:13px}
-  th,td{border-bottom:1px solid var(--line);padding:8px 9px;text-align:left;vertical-align:top}
-  th{background:var(--chip);position:sticky;top:0}
-  .tblwrap{overflow-x:auto;max-height:70vh}
+  th,td{border-bottom:1px solid var(--line);padding:8px 9px;text-align:left;vertical-align:top;white-space:nowrap}
+  th{background:var(--chip);position:sticky;top:0;color:var(--muted);font-size:12px;font-weight:700;user-select:none}
+  th.sortable{cursor:pointer} th.num,td.num{text-align:right}
+  tbody tr:hover{background:var(--chip)}
+  .tblwrap{overflow-x:auto;max-height:72vh}
   .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;font-weight:700}
-  .pass{background:var(--okbg);color:var(--brand)} .fail{background:var(--warnbg);color:var(--warn)}
+  .pill.ok,.pass{background:var(--okbg);color:var(--brand)} .pill.warn,.fail{background:var(--warnbg);color:var(--warn)}
+  .pill.mut{background:var(--chip);color:var(--muted)}
   .muted{color:var(--muted)} .warn{color:var(--warn)} .ok{color:var(--brand)}
+  .rate{font-weight:800}
+  .mini{height:6px;background:var(--chip);border-radius:4px;overflow:hidden;min-width:64px;display:inline-block;vertical-align:middle}
+  .mini>i{display:block;height:100%;background:var(--brand2)}
+  .job{font-size:11px;font-weight:800;padding:1px 7px;border-radius:6px;background:var(--chip);color:var(--muted);margin-right:3px}
+  .nameL{color:var(--accent);font-weight:700;cursor:pointer;border-bottom:1px dotted var(--accent)}
+  .nameL:hover{opacity:.75}
   .msg{border-radius:10px;padding:10px 12px;font-size:14px;margin:8px 0}
   .msg.warn{background:var(--warnbg);color:var(--warn)} .msg.ok{background:var(--okbg);color:var(--brand)}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
   details summary{cursor:pointer;color:var(--accent);font-size:12px}
   .ans{font-size:12px;margin-top:4px}
   .ans .w{color:var(--warn)} .ans .r{color:var(--brand)}
   code{background:var(--chip);padding:1px 5px;border-radius:5px}
+  /* 錯題統整 */
+  .wperson{border-bottom:1px solid var(--line);padding:12px 16px}
+  .wperson:last-child{border-bottom:0}
+  .wname{font-weight:800;font-size:14px;margin-bottom:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .wname .cnt{background:var(--warnbg);color:var(--warn);border-radius:999px;font-size:11px;padding:1px 8px;font-weight:800}
+  .wq{font-size:12.5px;color:var(--muted);padding:6px 0;border-top:1px dashed var(--line);display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:start}
+  .wq .qt{color:var(--ink)} .wq .x{color:var(--warn);font-weight:700} .wq .o{color:var(--brand);font-weight:700}
+  .rank-q{white-space:normal;min-width:200px;max-width:420px;color:var(--ink)}
+  .rank-c{white-space:normal;min-width:110px;max-width:200px;color:var(--brand);font-weight:700}
+  .rnk{display:inline-block;min-width:24px;text-align:center;font-weight:800;color:var(--warn)}
+  .rank-no{padding:11px 16px;color:var(--muted);font-size:12px;line-height:1.7}
+  /* 圖表（純 CSS） */
+  .chart{display:flex;align-items:flex-end;gap:7px;padding:16px 16px 34px;overflow-x:auto;min-height:180px}
+  .cbar{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:26px}
+  .cbar-track{height:120px;width:22px;background:var(--chip);border-radius:5px;display:flex;align-items:flex-end;overflow:hidden}
+  .cbar-track>i{display:block;width:100%;border-radius:5px 5px 0 0;transition:height .3s}
+  .cbar-val{font-size:10.5px;font-weight:800;color:var(--muted)}
+  .cbar-x{font-size:10.5px;color:var(--muted);white-space:nowrap;transform:rotate(-45deg);transform-origin:center top;margin-top:5px}
+  /* Modal 個人詳情 */
+  .modal{position:fixed;inset:0;background:rgba(10,18,30,.55);display:flex;align-items:flex-start;justify-content:center;padding:28px 14px;z-index:50;overflow-y:auto}
+  .mbox{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:820px;width:100%;overflow:hidden}
+  .mhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .mhead .mt{font-size:17px;font-weight:800;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .mhead .ms{color:var(--muted);font-size:12.5px;margin-top:4px}
+  .mclose{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:9px;padding:5px 11px;cursor:pointer;font-size:16px;line-height:1}
+  .mstat{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px 4px}
+  .mstat .ms1{background:var(--chip);border-radius:10px;padding:7px 12px;font-size:12px;color:var(--muted);font-weight:600}
+  .mstat .ms1 b{color:var(--ink);font-size:15px;font-weight:800}
+  .mbody{padding:8px 18px 18px}
+  .hide{display:none}
+  @media print{
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    .noprint{display:none !important}
+    .card,.tile{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+    th{position:static}
+    .modal{position:static;background:none;padding:0}.mbox{box-shadow:none;border:0}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>🗂️ 每日安全測驗 · 承辦看板</h1>
-  <div class="sub">拆櫃／拉線／疊櫃　每日三題　·　最高權限：陳尚福（工號 26516）</div>
-  <div class="tabs">
+  <header class="top">
+    <div>
+      <h1>🗂️ 每日安全測驗 · 承辦看板</h1>
+      <div class="sub">拆櫃／拉線／疊櫃　每日三題　·　最高權限：陳尚福（工號 26516）</div>
+    </div>
+    <div class="toolbtns noprint">
+      <button class="theme-btn" id="csvBtn">⬇ 匯出 CSV</button>
+      <button class="theme-btn" id="printBtn">🖨 列印</button>
+      <button class="theme-btn" id="themeBtn">🌓 主題</button>
+    </div>
+  </header>
+  <div class="tabs noprint">
     <button data-t="board" class="on">📊 成績看板</button>
     <button data-t="ext">⏰ 延後審核</button>
     <button data-t="bank">📚 題庫管理</button>
@@ -61,13 +135,17 @@
   <div id="view"><div class="card">載入中…</div></div>
 </div>
 
+<div id="modal" class="modal hide"><div class="mbox" id="mbox"></div></div>
+
 <script>
 const API = "https://hmqnlovyzlvvnkqmfwtt.supabase.co/functions/v1/daily";
 const K = new URLSearchParams(location.search).get("k") || "";
 const view = document.getElementById("view");
-const esc = s => (s ?? "").replace(/[&<>]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]));
+const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const pct = x => (x*100).toFixed(1)+"%";
+const d2 = s => (s||"").slice(5); // MM-DD
 const todayStr = () => new Date(Date.now()+8*3600000).toISOString().slice(0,10);
-function fmtTime(shiftMs){ return new Date(shiftMs).toISOString().slice(11,16); } // shift 空間 → 台北 HH:MM
+function fmtTime(shiftMs){ return new Date(shiftMs).toISOString().slice(11,16); }
 
 async function api(action, opts={}){
   const isPost = !!opts.body;
@@ -78,77 +156,423 @@ async function api(action, opts={}){
   return res.json();
 }
 
+// ---- 公司對照 ----
+const COMP_ORDER = ["信林","有根","丞閎","新竹物流","其他"];
+function companyOf(emp){ emp=String(emp||"").trim(); if(emp.length>8) return "其他"; const p=emp.slice(0,2);
+  return p==="10"?"有根":p==="20"?"丞閎":p==="30"?"信林":p==="00"?"新竹物流":"其他"; }
+
+// ---- 主題 / 列印 / CSV ----
+document.getElementById("themeBtn").onclick = () => {
+  const r = document.documentElement;
+  const cur = r.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme:dark)").matches ? "dark" : "light");
+  r.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+};
+document.getElementById("printBtn").onclick = () => window.print();
+document.getElementById("csvBtn").onclick = () => { if(curTab==="board") exportCsv(); else alert("請切到「成績看板」再匯出。"); };
+
+// ---- 分頁 ----
+let curTab = "board";
 document.querySelectorAll(".tabs button").forEach(b=>{
   b.onclick = ()=>{ document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
-    b.classList.add("on"); TAB[b.dataset.t](); };
+    b.classList.add("on"); curTab=b.dataset.t; TAB[curTab](); };
 });
-
 const TAB = { board: renderBoard, ext: renderExt, bank: renderBank, center: renderCenter };
 
-// ============ 成績看板 ============
-let boardDate = todayStr();
-async function renderBoard(){
-  view.innerHTML = `<div class="card">
-    <div class="row">日期：<input type="date" id="d" value="${boardDate}">
-      <button class="act" id="load">查詢</button>
-      <button class="sec" id="csv">匯出 CSV</button>
-      <button class="sec" id="rf">🔄 重新整理</button></div>
-    <div id="tiles"></div><div id="tbl">載入中…</div></div>`;
-  document.getElementById("load").onclick = ()=>{ boardDate = document.getElementById("d").value; loadBoard(); };
-  document.getElementById("rf").onclick = loadBoard;
-  document.getElementById("csv").onclick = exportCsv;
-  loadBoard();
+/* ==========================================================
+   成績看板（比照 score-live 分析）
+   ========================================================== */
+let RESULTS = [];   // daily_results 原始（跨日）
+let FLAT = [];      // 逐題攤平：{name,emp_id,job_type,test_date,question,chosen_option,correct_option,is_wrong,center,duration_sec,created_at,daypass}
+let DATES = [];
+let RANGE_LOADED = false;
+let bs = { view:"board", job:"全部", q:"", company:"全部", from:"", to:"", year:"全部", month:"全部",
+  boardDate: todayStr(), sortKey:"wrongRate", sortDir:-1 };
+
+async function loadRange(){
+  const r = await api("results_range");
+  RESULTS = r.rows || [];
+  FLAT = [];
+  for(const res of RESULTS){
+    const daypass = res.total>0 && res.score===res.total;
+    for(const a of (res.answers||[])){
+      FLAT.push({ name:res.name, emp_id:res.emp_id, job_type:a.job_type, test_date:res.test_date,
+        question:a.question, chosen_option:a.chosen, correct_option:a.correct, is_wrong:!a.ok,
+        center:res.center, duration_sec:res.duration_sec, created_at:res.created_at, daypass });
+    }
+  }
+  DATES = [...new Set(RESULTS.map(r=>r.test_date))].sort();
+  if(!DATES.length) DATES=[todayStr()];
+  bs.from = DATES[0]; bs.to = DATES[DATES.length-1];
+  RANGE_LOADED = true;
 }
-let lastRows = [];
-async function loadBoard(){
-  const r = await api("results", { query:`date=${boardDate}` });
-  if(r.error){ document.getElementById("tbl").innerHTML = `<div class="msg warn">讀取失敗（token 無效？）</div>`; return; }
-  lastRows = r.rows||[];
-  const s = r.summary||{total:0,passed:0,byCompany:{},byCenter:{}};
-  const comp = Object.entries(s.byCompany).map(([k,v])=>`${k} ${v.done}人(過${v.pass})`).join("　") || "—";
-  const cent = Object.entries(s.byCenter).map(([k,v])=>`${k} ${v}`).join("　") || "—";
-  document.getElementById("tiles").innerHTML = `<div class="tiles">
-    <div class="tile"><div class="k">完成人數</div><div class="v">${s.total}</div></div>
-    <div class="tile"><div class="k">全對通過</div><div class="v ok">${s.passed}</div></div>
-    <div class="tile"><div class="k">未全對</div><div class="v warn">${s.total-s.passed}</div></div>
-    <div class="tile" style="grid-column:span 2"><div class="k">各人力公司</div><div style="font-size:13px;margin-top:4px">${esc(comp)}</div></div>
-    </div><div class="msg" style="background:var(--chip)">各中心：${esc(cent)}</div>`;
-  if(!lastRows.length){ document.getElementById("tbl").innerHTML = `<div class="msg" style="background:var(--chip)">${boardDate} 尚無人作答。</div>`; return; }
-  const body = lastRows.map(r=>{
+
+async function renderBoard(){
+  view.innerHTML = `<div class="card"><div class="empty">載入中…</div></div>`;
+  if(!RANGE_LOADED) await loadRange();
+  draw();
+}
+
+// 篩選器（分析視圖用）
+const dateOK = r => (!bs.from || r.test_date>=bs.from) && (!bs.to || r.test_date<=bs.to);
+const jobOK  = r => bs.job==="全部" || r.job_type===bs.job;
+const compOK = r => bs.company==="全部" || companyOf(r.emp_id)===bs.company;
+const qOK    = r => { if(!bs.q) return true; const q=bs.q.trim(); return (r.name||"").includes(q) || (r.emp_id||"").includes(q); };
+const flatScoped = () => FLAT.filter(r => jobOK(r) && dateOK(r) && compOK(r));
+
+function draw(){
+  const compsPresent = ["全部", ...COMP_ORDER.filter(c=>RESULTS.some(r=>companyOf(r.emp_id)===c))];
+  const compOpts = compsPresent.map(c=>`<option value="${c}" ${c===bs.company?"selected":""}>${c}</option>`).join("");
+  const scoped = DATES.filter(d=>(bs.year==="全部"||d.slice(0,4)===bs.year)&&(bs.month==="全部"||d.slice(5,7)===bs.month));
+  const dopt = sel => scoped.map(d=>`<option value="${d}" ${d===sel?"selected":""}>${d.slice(5)}</option>`).join("");
+  const years = ["全部", ...[...new Set(DATES.map(d=>d.slice(0,4)))].sort()];
+  const yearOpts = years.map(y=>`<option value="${y}" ${y===bs.year?"selected":""}>${y==="全部"?"全部年":y+"年"}</option>`).join("");
+  const months = ["全部", ...[...new Set(DATES.filter(d=>bs.year==="全部"||d.slice(0,4)===bs.year).map(d=>d.slice(5,7)))].sort()];
+  const monthOpts = months.map(m=>`<option value="${m}" ${m===bs.month?"selected":""}>${m==="全部"?"全部月":(+m)+"月"}</option>`).join("");
+
+  const views = [["board","當日明細"],["people","人員成績表"],["wrong","錯題統整"],["rank","常錯題排行"],["daily","逐日總覽"]];
+  const jobs = ["全部","拆櫃","拉線","疊櫃"];
+
+  let h = `<div class="bar noprint">
+    <div class="seg" id="viewSeg">${views.map(([v,t])=>`<button class="${bs.view===v?"on":""}" data-view="${v}">${t}</button>`).join("")}</div>
+    <input type="search" id="q" placeholder="🔍 搜尋姓名或工號" value="${esc(bs.q)}">
+  </div>`;
+
+  if(bs.view==="board"){
+    h += `<div class="bar noprint">
+      <span class="muted" style="font-size:13px;font-weight:600">📅 日期</span>
+      <input type="date" id="bd" value="${bs.boardDate}">
+      <button class="sec" id="today">今天</button>
+      <button class="sec" id="rf">🔄 重新整理</button></div>`;
+  } else {
+    h += `<div class="bar noprint">
+      <div class="seg" id="jobSeg">${jobs.map(j=>`<button class="${bs.job===j?"on":""}" data-job="${j}">${j}</button>`).join("")}</div>
+      <span class="muted" style="font-size:13px;font-weight:600">🏢 公司</span>
+      <select id="compSel">${compOpts}</select>
+      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">📅 期間</span>
+      <select id="ySel">${yearOpts}</select><select id="mSel">${monthOpts}</select>
+      <select id="dFrom">${dopt(bs.from)}</select><span class="muted">–</span><select id="dTo">${dopt(bs.to)}</select>
+      <button class="sec" id="dReset">全部</button>
+      <button class="sec" id="rf">🔄 重新整理</button>
+      ${(bs.from!==DATES[0]||bs.to!==DATES[DATES.length-1])?`<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${bs.from.slice(5)}~${bs.to.slice(5)}</span>`:""}</div>`;
+  }
+
+  h += `<div id="tiles"></div><div id="body"></div>`;
+  view.innerHTML = h;
+
+  renderTiles();
+  if(bs.view==="board") renderBoardDay();
+  else if(bs.view==="people") renderPeople();
+  else if(bs.view==="wrong") renderWrong();
+  else if(bs.view==="rank") renderRank();
+  else renderDaily();
+
+  bindBar();
+}
+
+function bindBar(){
+  document.querySelectorAll("#viewSeg button").forEach(b=>b.onclick=()=>{ bs.view=b.dataset.view; draw(); });
+  const js = document.getElementById("jobSeg"); if(js) js.querySelectorAll("button").forEach(b=>b.onclick=()=>{ bs.job=b.dataset.job; draw(); });
+  const rf = document.getElementById("rf"); if(rf) rf.onclick = async ()=>{ RANGE_LOADED=false; await renderBoard(); };
+  const bd = document.getElementById("bd"); if(bd) bd.onchange=()=>{ bs.boardDate=bd.value; draw(); };
+  const td = document.getElementById("today"); if(td) td.onclick=()=>{ bs.boardDate=todayStr(); draw(); };
+  const cs = document.getElementById("compSel"); if(cs) cs.onchange=()=>{ bs.company=cs.value; draw(); };
+  const yS = document.getElementById("ySel"); if(yS) yS.onchange=()=>{ bs.year=yS.value; bs.month="全部";
+    const ds=DATES.filter(d=>bs.year==="全部"||d.slice(0,4)===bs.year); bs.from=ds[0]; bs.to=ds[ds.length-1]; draw(); };
+  const mS = document.getElementById("mSel"); if(mS) mS.onchange=()=>{ bs.month=mS.value;
+    const ds=DATES.filter(d=>(bs.year==="全部"||d.slice(0,4)===bs.year)&&(bs.month==="全部"||d.slice(5,7)===bs.month)); bs.from=ds[0]; bs.to=ds[ds.length-1]; draw(); };
+  const dF = document.getElementById("dFrom"); if(dF) dF.onchange=()=>{ bs.from=dF.value; if(bs.to<bs.from) bs.to=bs.from; draw(); };
+  const dT = document.getElementById("dTo"); if(dT) dT.onchange=()=>{ bs.to=dT.value; if(bs.from>bs.to) bs.from=bs.to; draw(); };
+  const dR = document.getElementById("dReset"); if(dR) dR.onclick=()=>{ bs.year="全部"; bs.month="全部"; bs.from=DATES[0]; bs.to=DATES[DATES.length-1]; draw(); };
+  const q = document.getElementById("q");
+  if(q){ let composing=false;
+    const apply=()=>{ const pos=q.selectionStart; bs.q=q.value; draw(); const nq=document.getElementById("q");
+      if(nq){ nq.focus(); try{ nq.setSelectionRange(pos,pos); }catch(_){} } };
+    q.addEventListener("compositionstart",()=>composing=true);
+    q.addEventListener("compositionend",()=>{ composing=false; apply(); });
+    q.oninput=e=>{ if(composing||(e&&e.isComposing)){ bs.q=q.value; return; } apply(); };
+  }
+  document.querySelectorAll("#body .nameL").forEach(el=>el.onclick=()=>openPerson(el.dataset.person));
+  document.querySelectorAll("#body th.sortable").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.sort;
+    if(bs.sortKey===k) bs.sortDir*=-1; else { bs.sortKey=k; bs.sortDir=(k==="name"||k==="emp_id")?1:-1; }
+    draw();
+  });
+}
+
+// ---- Tiles ----
+function renderTiles(){
+  const el = document.getElementById("tiles");
+  if(bs.view==="board"){
+    const rows = RESULTS.filter(r=>r.test_date===bs.boardDate);
+    const passed = rows.filter(r=>r.passed).length;
+    const byC = {}; for(const r of rows){ const c=companyOf(r.emp_id); byC[c]=(byC[c]||{done:0,pass:0}); byC[c].done++; if(r.passed) byC[c].pass++; }
+    const comp = Object.entries(byC).map(([k,v])=>`${k} ${v.done}人(過${v.pass})`).join("　")||"—";
+    el.innerHTML = `<div class="tiles">
+      <div class="tile"><div class="k">完成人數</div><div class="v">${rows.length}</div></div>
+      <div class="tile"><div class="k">全對通過</div><div class="v ok">${passed}</div></div>
+      <div class="tile"><div class="k">未全對</div><div class="v warn">${rows.length-passed}</div></div>
+      <div class="tile" style="grid-column:span 2"><div class="k">各人力公司</div><div style="font-size:13px;margin-top:4px">${esc(comp)}</div></div>
+    </div>`;
+  } else {
+    const rows = flatScoped();
+    const wrong = rows.filter(r=>r.is_wrong).length;
+    const people = new Set(rows.map(r=>r.name)).size;
+    const rate = rows.length ? (rows.length-wrong)/rows.length : 0;
+    el.innerHTML = `<div class="tiles">
+      <div class="tile"><div class="k">答題人次(題)</div><div class="v">${rows.length}</div></div>
+      <div class="tile"><div class="k">受測人數</div><div class="v">${people} <small>人</small></div></div>
+      <div class="tile"><div class="k">答對率</div><div class="v ok">${pct(rate)}</div></div>
+      <div class="tile"><div class="k">答錯題數</div><div class="v warn">${wrong}</div></div>
+    </div>`;
+  }
+}
+
+// ---- 當日明細（原看板）----
+function renderBoardDay(){
+  let rows = RESULTS.filter(r=>r.test_date===bs.boardDate);
+  if(bs.q){ const q=bs.q.trim(); rows = rows.filter(r=>(r.name||"").includes(q)||(r.emp_id||"").includes(q)); }
+  const el = document.getElementById("body");
+  if(!rows.length){ el.innerHTML = `<div class="card"><div class="empty">${bs.boardDate} 尚無人作答。</div></div>`; return; }
+  const body = rows.map(r=>{
     const ans = (r.answers||[]).map(a=>`<div class="ans"><span class="${a.ok?'r':'w'}">${a.ok?'✔':'✘'}</span> 【${esc(a.job_type)}】${esc(a.question)}<br>作答：${esc(a.chosen||'（未答）')}${a.ok?'':` → 正解：<b>${esc(a.correct)}</b>`}</div>`).join("");
-    const co = compByEmp(r.emp_id);
     return `<tr>
-      <td>${esc(r.center||'')}</td><td>${esc(co)}</td><td><code>${esc(r.emp_id)}</code></td>
-      <td>${esc(r.name)}</td>
-      <td>${r.score}/${r.total} <span class="pill ${r.passed?'pass':'fail'}">${r.passed?'通過':'未過'}</span></td>
+      <td>${esc(r.center||'')}</td><td>${esc(companyOf(r.emp_id))}</td><td><code>${esc(r.emp_id)}</code></td>
+      <td>${nameLink(r.name)}</td>
+      <td>${r.score}/${r.total} <span class="pill ${r.passed?'ok':'warn'}">${r.passed?'通過':'未過'}</span></td>
       <td>${r.duration_sec!=null?r.duration_sec+'s':''}</td>
       <td>${new Date(r.created_at).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</td>
       <td><details><summary>明細</summary>${ans}</details></td></tr>`;
   }).join("");
-  document.getElementById("tbl").innerHTML = `<div class="tblwrap"><table>
-    <thead><tr><th>中心</th><th>公司</th><th>工號</th><th>姓名</th><th>分數</th><th>用時</th><th>交卷</th><th>答題</th></tr></thead>
-    <tbody>${body}</tbody></table></div>`;
-}
-function compByEmp(e){ e=String(e); if(e.startsWith("000"))return"新竹物流"; if(e.startsWith("10"))return"有根"; if(e.startsWith("20"))return"丞閎"; if(e.startsWith("30"))return"信林"; return"其他"; }
-function exportCsv(){
-  if(!lastRows.length){ alert("無資料"); return; }
-  const head = ["日期","中心","公司","工號","姓名","分數","滿分","通過","用時秒","交卷時間"];
-  const lines = [head.join(",")];
-  for(const r of lastRows){
-    lines.push([r.test_date, r.center||"", compByEmp(r.emp_id), r.emp_id, r.name, r.score, r.total,
-      r.passed?"是":"否", r.duration_sec??"", new Date(r.created_at).toLocaleString("zh-TW")]
-      .map(x=>`"${String(x).replace(/"/g,'""')}"`).join(","));
-  }
-  const blob = new Blob(["﻿"+lines.join("\n")], {type:"text/csv;charset=utf-8"});
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-  a.download = `每日測驗_${boardDate}.csv`; a.click();
+  el.innerHTML = `<div class="card pad0"><h2>${bs.boardDate} 當日明細 <span class="h2note">${rows.length} 人已交卷</span></h2>
+    <div class="tblwrap"><table><thead><tr><th>中心</th><th>公司</th><th>工號</th><th>姓名</th><th>分數</th><th>用時</th><th>交卷</th><th>答題</th></tr></thead>
+    <tbody>${body}</tbody></table></div></div>`;
 }
 
-// ============ 延後審核 ============
-async function renderExt(){
-  view.innerHTML = `<div class="card"><div id="ex">載入中…</div></div>`;
-  loadExt();
+// ---- 人員成績表（跨日彙總）----
+function personRows(){
+  const map = new Map();
+  for(const r of flatScoped()){
+    let p = map.get(r.name);
+    if(!p){ p={ name:r.name, emp_id:r.emp_id, total:0, wrong:0, jobs:new Set(), days:new Set(), badDays:new Set() }; map.set(r.name,p); }
+    p.total++; if(r.is_wrong){ p.wrong++; p.badDays.add(r.test_date); } p.jobs.add(r.job_type); p.days.add(r.test_date);
+    if(!p.emp_id && r.emp_id) p.emp_id=r.emp_id;
+  }
+  let arr = [...map.values()].map(p=>({ ...p, right:p.total-p.wrong, jobs:[...p.jobs],
+    days:p.days.size, badDays:p.badDays.size, rightRate:p.total?(p.total-p.wrong)/p.total:0, wrongRate:p.total?p.wrong/p.total:0 }));
+  if(bs.q){ const q=bs.q.trim(); arr=arr.filter(p=>p.name.includes(q)||(p.emp_id||"").includes(q)); }
+  const k=bs.sortKey, d=bs.sortDir;
+  arr.sort((a,b)=>{ let x=a[k],y=b[k];
+    if(typeof x==="string") return d*x.localeCompare(y,"zh-Hant");
+    return d*((x>y?1:x<y?-1:0)) || a.name.localeCompare(b.name,"zh-Hant"); });
+  return arr;
 }
+function sortTh(label,key,cls){ const on=bs.sortKey===key; const arr=on?(bs.sortDir===-1?" ▼":" ▲"):""; return `<th class="sortable ${cls||""}" data-sort="${key}">${label}${arr}</th>`; }
+function renderPeople(){
+  const arr = personRows();
+  let h = `<div class="card pad0"><h2>人員成績資料表 <span class="h2note">${arr.length} 人</span></h2><div class="tblwrap"><table><thead><tr>
+    ${sortTh("姓名","name")}${sortTh("工號","emp_id")}<th>工種</th>
+    ${sortTh("參加天數","days","num")}${sortTh("答題數","total","num")}${sortTh("答對","right","num")}
+    ${sortTh("答錯","wrong","num")}${sortTh("答對率","rightRate","num")}${sortTh("未全對天","badDays","num")}</tr></thead><tbody>`;
+  if(!arr.length) h += `<tr><td colspan="9" class="empty">查無資料</td></tr>`;
+  for(const p of arr){
+    h += `<tr>
+      <td>${nameLink(p.name)}</td><td class="muted">${esc(p.emp_id)}</td>
+      <td>${p.jobs.map(j=>`<span class="job">${j}</span>`).join("")}</td>
+      <td class="num">${p.days}</td><td class="num">${p.total}</td><td class="num">${p.right}</td>
+      <td class="num">${p.wrong?`<span class="pill warn">${p.wrong}</span>`:"0"}</td>
+      <td class="num"><span class="rate">${pct(p.rightRate)}</span> <span class="mini"><i style="width:${(p.rightRate*100).toFixed(0)}%"></i></span></td>
+      <td class="num">${p.badDays?`<span class="pill warn">${p.badDays}</span>`:"—"}</td></tr>`;
+  }
+  h += `</tbody></table></div></div>`;
+  document.getElementById("body").innerHTML = h;
+}
+
+// ---- 錯題統整 ----
+function wrongData(){
+  const map = new Map();
+  for(const r of flatScoped()){ if(!r.is_wrong) continue; if(!qOK(r)) continue;
+    if(!map.has(r.name)) map.set(r.name,[]); map.get(r.name).push(r); }
+  const arr = [...map.entries()].map(([name,items])=>({ name, emp_id:items[0].emp_id,
+    items:items.sort((a,b)=>a.test_date.localeCompare(b.test_date)||a.job_type.localeCompare(b.job_type)) }));
+  arr.sort((a,b)=>b.items.length-a.items.length||a.name.localeCompare(b.name,"zh-Hant"));
+  return arr;
+}
+function renderWrong(){
+  const arr = wrongData();
+  let h = `<div class="card pad0"><h2>每個人錯的題目統整 <span class="h2note">${arr.length} 人有答錯</span></h2>`;
+  if(!arr.length) h += `<div class="empty">此範圍內沒有答錯的紀錄 🎉</div>`;
+  for(const p of arr){
+    h += `<div class="wperson"><div class="wname">${nameLink(p.name)}
+      <span class="muted" style="font-weight:600;font-size:12px">${esc(p.emp_id)}</span>
+      <span class="cnt">答錯 ${p.items.length}</span></div>`;
+    for(const r of p.items){
+      h += `<div class="wq"><span><span class="job">${r.job_type}</span>${d2(r.test_date)}</span>
+        <span><span class="qt">${esc(r.question||"（當日題目）")}</span><br>
+        <span class="ans">你的答案：<span class="x">${esc(r.chosen_option)}</span>　正解：<span class="o">${esc(r.correct_option)}</span></span></span></div>`;
+    }
+    h += `</div>`;
+  }
+  h += `</div>`;
+  document.getElementById("body").innerHTML = h;
+}
+
+// ---- 常錯題排行 ----
+function rankData(){
+  const map = new Map();
+  for(const r of flatScoped()){ if(!qOK(r)) continue; if(!r.question) continue;
+    const key = r.job_type+"|"+r.question;
+    let m = map.get(key);
+    if(!m){ m={ job:r.job_type, q:r.question, attempts:0, wrong:0, correct:"", dates:new Set() }; map.set(key,m); }
+    m.attempts++; if(r.is_wrong) m.wrong++; m.dates.add(r.test_date);
+    if(!m.correct && r.correct_option) m.correct=r.correct_option;
+  }
+  return [...map.values()].map(m=>({ ...m, pct:m.attempts?m.wrong/m.attempts:0, dates:[...m.dates].sort() }))
+    .filter(m=>m.wrong>0).sort((a,b)=>b.wrong-a.wrong||b.pct-a.pct||a.job.localeCompare(b.job));
+}
+function renderRank(){
+  const arr = rankData();
+  const tableFor = items => {
+    let t = `<div class="tblwrap"><table><thead><tr>
+      <th class="num">名次</th><th>題目</th><th class="num">答錯</th><th class="num">答錯率</th><th class="num">應答</th><th>出現日期</th><th>正解</th></tr></thead><tbody>`;
+    if(!items.length) t += `<tr><td colspan="7" class="empty">此範圍內無答錯題目 🎉</td></tr>`;
+    items.forEach((m,i)=>{ t += `<tr>
+      <td class="num"><span class="rnk">${i+1}</span></td>
+      <td class="rank-q">${esc(m.q)}</td>
+      <td class="num"><span class="pill warn">${m.wrong}</span></td>
+      <td class="num"><span class="rate">${pct(m.pct)}</span></td>
+      <td class="num muted">${m.attempts}</td>
+      <td class="muted">${m.dates.map(d2).join("、")}</td>
+      <td class="rank-c">${esc(m.correct||"（看題意）")}</td></tr>`; });
+    t += `</tbody></table></div>`;
+    return t;
+  };
+  let h = "";
+  if(bs.job==="全部"){
+    for(const j of ["拆櫃","拉線","疊櫃"]){
+      const items = arr.filter(m=>m.job===j);
+      h += `<div class="card pad0"><h2><span class="job">${j}</span> 常錯題 <span class="h2note">${items.length} 題有答錯</span></h2>${tableFor(items)}</div>`;
+    }
+  } else {
+    h += `<div class="card pad0"><h2><span class="job">${bs.job}</span> 常錯題 <span class="h2note">${arr.length} 題有答錯</span></h2>${tableFor(arr)}</div>`;
+  }
+  document.getElementById("body").innerHTML = h;
+}
+
+// ---- 逐日總覽 ----
+function dailyRate(){
+  const map = new Map();
+  for(const r of flatScoped()){ let d=map.get(r.test_date); if(!d){ d={ date:r.test_date, n:0, wrong:0 }; map.set(r.test_date,d); } d.n++; if(r.is_wrong) d.wrong++; }
+  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)).map(d=>({ ...d, rate:d.n?(d.n-d.wrong)/d.n:0 }));
+}
+function dailyData(){
+  const map = new Map();
+  for(const r of flatScoped()){ const key=r.test_date+"|"+r.job_type;
+    let d=map.get(key); if(!d){ d={ date:r.test_date, job:r.job_type, n:0, wrong:0 }; map.set(key,d); } d.n++; if(r.is_wrong) d.wrong++; }
+  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.job.localeCompare(b.job));
+}
+function renderDaily(){
+  const rate = dailyRate();
+  let h = "";
+  if(rate.length){
+    const bars = rate.map(r=>{ const hgt=Math.round(r.rate*100);
+      const col = r.rate>=0.95?"var(--brand2)":r.rate>=0.8?"var(--accent)":"var(--warn)";
+      const mm=+r.date.slice(5,7), dd=+r.date.slice(8,10);
+      return `<div class="cbar" title="${r.date}　答對率 ${pct(r.rate)}（${r.n} 題）">
+        <div class="cbar-track"><i style="height:${hgt}%;background:${col}"></i></div>
+        <div class="cbar-val">${(r.rate*100).toFixed(0)}</div><div class="cbar-x">${mm}/${dd}</div></div>`;
+    }).join("");
+    h += `<div class="card pad0"><h2>📈 每日答對率（%）<span class="h2note">${bs.job==="全部"?"全工種合計":bs.job}　綠≥95%、藍≥80%、紅<80%</span></h2><div class="chart">${bars}</div></div>`;
+  }
+  const arr = dailyData();
+  h += `<div class="card pad0"><h2>逐日成效總覽</h2><div class="tblwrap"><table><thead><tr>
+    <th>日期</th><th>工種</th><th class="num">答題</th><th class="num">答錯</th><th class="num">答對率</th></tr></thead><tbody>`;
+  if(!arr.length) h += `<tr><td colspan="5" class="empty">查無資料</td></tr>`;
+  for(const d of arr){ const rt=d.n?(d.n-d.wrong)/d.n:0;
+    h += `<tr><td>${esc(d.date)}</td><td><span class="job">${d.job}</span></td>
+      <td class="num">${d.n}</td><td class="num">${d.wrong?`<span class="pill warn">${d.wrong}</span>`:"0"}</td>
+      <td class="num"><span class="rate">${pct(rt)}</span> <span class="mini"><i style="width:${(rt*100).toFixed(0)}%"></i></span></td></tr>`; }
+  h += `</tbody></table></div></div>`;
+  document.getElementById("body").innerHTML = h;
+}
+
+// ---- 個人詳情 Modal ----
+const nameLink = name => `<span class="nameL" data-person="${esc(name)}">${esc(name)}</span>`;
+function openPerson(name){
+  const recs = RESULTS.filter(r=>r.name===name).sort((a,b)=>a.test_date.localeCompare(b.test_date));
+  if(!recs.length) return;
+  const emp = recs.find(r=>r.emp_id)?.emp_id || "";
+  const jobsAll = [...new Set(recs.flatMap(r=>(r.answers||[]).map(a=>a.job_type)))];
+  const days = recs.length;
+  const qTotal = recs.reduce((s,r)=>s+(r.answers||[]).length,0);
+  const qWrong = recs.reduce((s,r)=>s+(r.answers||[]).filter(a=>!a.ok).length,0);
+  const passDays = recs.filter(r=>r.passed).length;
+  const company = companyOf(emp);
+  let b = `<div class="mhead"><div><div class="mt">${esc(name)} ${jobsAll.map(j=>`<span class="job">${j}</span>`).join("")}</div>
+      <div class="ms">工號 ${esc(emp)||"（無）"}　${company!=="其他"?"· "+company:""}</div></div>
+    <button class="mclose" id="mclose">✕</button></div>
+    <div class="mstat">
+      <div class="ms1">參加天數 <b>${days}</b></div>
+      <div class="ms1">全對天數 <b style="color:var(--brand)">${passDays}</b></div>
+      <div class="ms1">答對題數 <b style="color:var(--brand)">${qTotal-qWrong}</b></div>
+      <div class="ms1">答錯題數 <b style="color:var(--warn)">${qWrong}</b></div>
+      <div class="ms1">答對率 <b>${pct(qTotal?(qTotal-qWrong)/qTotal:0)}</b></div>
+    </div><div class="mbody"><div class="tblwrap"><table><thead><tr>
+      <th>日期</th><th>結果</th><th class="num">用時</th><th>逐題（工種／作答→正解）</th></tr></thead><tbody>`;
+  for(const r of recs){
+    const badge = r.passed?'<span class="pill ok">全對通過</span>':'<span class="pill warn">'+r.score+'/'+r.total+' 未過</span>';
+    const detail = (r.answers||[]).map(a=>`<div class="ans"><span class="${a.ok?'r':'w'}">${a.ok?'✔':'✘'}</span> <span class="job">${esc(a.job_type)}</span>${esc(a.question||"")}<br>
+      作答：<span class="${a.ok?'o':'x'}">${esc(a.chosen||'（未答）')}</span>${a.ok?'':`　正解：<span class="o">${esc(a.correct)}</span>`}</div>`).join("");
+    b += `<tr><td style="font-weight:700">${esc(r.test_date)}</td><td>${badge}</td>
+      <td class="num">${r.duration_sec!=null?r.duration_sec+'s':'—'}</td>
+      <td style="white-space:normal;min-width:280px">${detail}</td></tr>`;
+  }
+  b += `</tbody></table></div></div>`;
+  document.getElementById("mbox").innerHTML = b;
+  document.getElementById("modal").classList.remove("hide");
+  document.getElementById("mclose").onclick = closePerson;
+}
+function closePerson(){ document.getElementById("modal").classList.add("hide"); }
+document.getElementById("modal").onclick = e => { if(e.target.id==="modal") closePerson(); };
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closePerson(); });
+
+// ---- CSV（依目前視圖）----
+function csvCell(v){ v=(v??"").toString(); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function download(name, rows){
+  const csv = "﻿"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
+  const a = document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+function exportCsv(){
+  if(bs.view==="board"){
+    const rows = RESULTS.filter(r=>r.test_date===bs.boardDate);
+    if(!rows.length){ alert("無資料"); return; }
+    const out=[["日期","中心","公司","工號","姓名","分數","滿分","通過","用時秒","交卷時間"]];
+    for(const r of rows) out.push([r.test_date,r.center||"",companyOf(r.emp_id),r.emp_id,r.name,r.score,r.total,r.passed?"是":"否",r.duration_sec??"",new Date(r.created_at).toLocaleString("zh-TW")]);
+    download(`每日測驗_${bs.boardDate}.csv`, out);
+  } else if(bs.view==="people"){
+    const out=[["姓名","工號","工種","參加天數","答題數","答對","答錯","答對率","未全對天數"]];
+    for(const p of personRows()) out.push([p.name,p.emp_id,p.jobs.join("/"),p.days,p.total,p.right,p.wrong,pct(p.rightRate),p.badDays]);
+    download(`人員成績表_${bs.from.slice(5)}-${bs.to.slice(5)}.csv`, out);
+  } else if(bs.view==="wrong"){
+    const out=[["姓名","工號","工種","日期","題目","你的答案","正解"]];
+    for(const p of wrongData()) for(const r of p.items) out.push([p.name,p.emp_id,r.job_type,r.test_date,r.question||"",r.chosen_option,r.correct_option]);
+    download(`錯題統整_${bs.from.slice(5)}-${bs.to.slice(5)}.csv`, out);
+  } else if(bs.view==="rank"){
+    const out=[["工種","名次","題目","答錯","答錯率","應答","出現日期","正解"]];
+    const arr = rankData(); const byJob={}; arr.forEach(m=>(byJob[m.job]||=[]).push(m));
+    for(const j of Object.keys(byJob)) byJob[j].forEach((m,i)=>out.push([j,i+1,m.q,m.wrong,pct(m.pct),m.attempts,m.dates.map(d2).join("、"),m.correct]));
+    download(`常錯題排行_${bs.from.slice(5)}-${bs.to.slice(5)}.csv`, out);
+  } else {
+    const out=[["日期","工種","答題","答錯","答對率"]];
+    for(const d of dailyData()) out.push([d.date,d.job,d.n,d.wrong,pct(d.n?(d.n-d.wrong)/d.n:0)]);
+    download(`逐日總覽_${bs.from.slice(5)}-${bs.to.slice(5)}.csv`, out);
+  }
+}
+
+/* ==========================================================
+   延後審核（原樣）
+   ========================================================== */
+async function renderExt(){ view.innerHTML = `<div class="card"><div id="ex">載入中…</div></div>`; loadExt(); }
 async function loadExt(){
   const date = todayStr();
   const r = await api("pending", { query:`date=${date}` });
@@ -185,7 +609,9 @@ async function loadExt(){
   function msg(t,ok){ document.getElementById("gmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
 }
 
-// ============ 題庫管理 ============
+/* ==========================================================
+   題庫管理（原樣）
+   ========================================================== */
 async function renderBank(){
   view.innerHTML = `
   <div class="card">
@@ -196,7 +622,7 @@ async function renderBank(){
     </div>
     <input id="nq" placeholder="題目文字" style="width:100%;margin-top:8px">
     <div id="nchoice" style="display:none;margin-top:8px">
-      <textarea id="nopts" rows="3" placeholder="每行一個選項，例如：&#10;1.由人工異常排出&#10;2.直接上分貨機即可&#10;3.裝密林籃上分貨機" style="width:100%;background:var(--bg);color:var(--ink);border:1.5px solid var(--line);border-radius:9px;padding:9px;font-size:14px"></textarea>
+      <textarea id="nopts" rows="3" placeholder="每行一個選項，例如：&#10;1.由人工異常排出&#10;2.直接上分貨機即可&#10;3.裝密林籃上分貨機" style="width:100%"></textarea>
       <input id="ncorrect" placeholder="正解（需與上面某一選項文字完全相同）" style="width:100%;margin-top:8px">
     </div>
     <div id="ntf" style="margin-top:8px">正解：
@@ -223,15 +649,13 @@ async function renderBank(){
   };
   await loadBankList();
 }
-
 function wireAddForm(){
   const job = document.getElementById("njob"), type = document.getElementById("ntype");
   const choiceBox = document.getElementById("nchoice"), tfBox = document.getElementById("ntf");
   function syncType(){ const t = type.value; choiceBox.style.display = t==="choice"?"block":"none"; tfBox.style.display = t==="tf"?"block":"none"; }
-  // 選工種自動帶題型：拉線/疊櫃→是非；拆櫃→單選
   job.onchange = ()=>{ type.value = job.value==="拆櫃"?"choice":"tf"; syncType(); };
   type.onchange = syncType;
-  type.value = "choice"; syncType(); // 預設拆櫃單選
+  type.value = "choice"; syncType();
   document.getElementById("nadd").onclick = async ()=>{
     const nmsg = document.getElementById("nmsg");
     const body = { job_type: job.value, qtype: type.value, question: document.getElementById("nq").value.trim() };
@@ -253,7 +677,6 @@ function wireAddForm(){
     }
   };
 }
-
 async function loadBankList(){
   const r = await api("bank_list");
   if(r.error){ document.getElementById("bk").innerHTML = `<div class="msg warn">讀取失敗</div>`; return; }
@@ -262,8 +685,8 @@ async function loadBankList(){
     const opts = (q.options||[]).join("\n");
     return `<tr data-id="${q.id}">
       <td>${esc(q.job_type)}</td>
-      <td style="min-width:220px">${esc(q.question)}</td>
-      <td><textarea class="o" rows="${Math.max(2,(q.options||[]).length)}" style="width:230px;font-size:12px;background:var(--bg);color:var(--ink);border:1.5px solid var(--line);border-radius:8px;padding:6px">${esc(opts)}</textarea><div class="muted" style="font-size:11px">每行一個選項</div></td>
+      <td style="min-width:220px;white-space:normal">${esc(q.question)}</td>
+      <td><textarea class="o" rows="${Math.max(2,(q.options||[]).length)}" style="width:230px;font-size:12px">${esc(opts)}</textarea><div class="muted" style="font-size:11px">每行一個選項</div></td>
       <td><input class="c" value="${esc(q.correct)}" style="width:180px"></td>
       <td><input type="checkbox" class="a" ${q.active?'checked':''}></td>
       <td><button class="act sv">儲存</button></td></tr>`;
@@ -286,7 +709,9 @@ async function loadBankList(){
   function bmsg(t,ok){ document.getElementById("bmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
 }
 
-// ============ 中心管理 ============
+/* ==========================================================
+   中心管理（原樣）
+   ========================================================== */
 async function renderCenter(){
   view.innerHTML = `<div class="card">
     <div class="row"><input id="cn" placeholder="轉運中心名稱（例：楊梅轉運中心）" style="width:260px">
@@ -306,7 +731,6 @@ async function renderCenter(){
   function cmsg(t,ok){ document.getElementById("cmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
 }
 async function loadCenters(){
-  // 用公開 centers 只回啟用中的；改用 bank? 這裡直接顯示啟用清單
   const r = await api("centers");
   const list = (r.centers||[]);
   document.getElementById("clist").innerHTML = `<div class="tblwrap"><table>
