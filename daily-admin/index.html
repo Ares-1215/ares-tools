@@ -249,18 +249,18 @@ function draw(){
     bs.boardDate = todayStr();
     h += `<div class="bar noprint">
       <span class="muted" style="font-size:13px;font-weight:600">📅 今日 ${bs.boardDate}</span>
-      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🏢 公司</span>
-      <select id="compSel">${compOpts}</select>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🚚 中心</span>
       <select id="centerSel">${centerOpts}</select>
+      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🏢 公司</span>
+      <select id="compSel">${compOpts}</select>
       <button class="sec" id="rf">🔄 重新整理</button></div>`;
   } else {
     h += `<div class="bar noprint">
       <div class="seg" id="jobSeg">${jobs.map(j=>`<button class="${bs.job===j?"on":""}" data-job="${j}">${j}</button>`).join("")}</div>
-      <span class="muted" style="font-size:13px;font-weight:600">🏢 公司</span>
-      <select id="compSel">${compOpts}</select>
-      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🚚 中心</span>
+      <span class="muted" style="font-size:13px;font-weight:600">🚚 中心</span>
       <select id="centerSel">${centerOpts}</select>
+      <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🏢 公司</span>
+      <select id="compSel">${compOpts}</select>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">📅 期間</span>
       <select id="ySel">${yearOpts}</select><select id="mSel">${monthOpts}</select>
       <select id="dFrom">${dopt(bs.from)}</select><span class="muted">–</span><select id="dTo">${dopt(bs.to)}</select>
