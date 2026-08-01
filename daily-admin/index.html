@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日安全測驗｜承辦看板＋延後審核</title>
+<style>
+  :root{--bg:#f4f6f9;--card:#fff;--ink:#1a2330;--muted:#66738a;--line:#e3e8ef;
+    --brand:#0b6b3a;--brand2:#12945a;--accent:#1565c0;--warn:#c62828;--warnbg:#fdecea;
+    --okbg:#e8f5ec;--chip:#eef2f7;--shadow:0 1px 3px rgba(20,40,70,.08),0 6px 18px rgba(20,40,70,.05)}
+  @media (prefers-color-scheme:dark){:root{--bg:#0f141b;--card:#161d27;--ink:#e6ebf2;--muted:#93a1b5;
+    --line:#26313f;--brand:#38c07f;--brand2:#2ea36a;--accent:#5aa2e6;--warn:#ff6b6b;--warnbg:#3a1f22;
+    --okbg:#183026;--chip:#1e2733;--shadow:0 1px 3px rgba(0,0,0,.4)}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.55}
+  .wrap{max-width:1200px;margin:0 auto;padding:16px 16px 60px}
+  h1{font-size:20px;margin:0 0 2px;font-weight:800}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tabs button{border:0;background:var(--chip);color:var(--muted);padding:9px 16px;border-radius:10px;
+    font-size:14px;font-weight:700;cursor:pointer}
+  .tabs button.on{background:var(--brand);color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+    padding:16px;margin-bottom:16px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  input,select{background:var(--bg);border:1.5px solid var(--line);color:var(--ink);border-radius:9px;
+    padding:9px 11px;font-size:14px}
+  button.act{border:0;background:var(--brand);color:#fff;border-radius:9px;padding:9px 15px;
+    font-size:14px;font-weight:700;cursor:pointer}
+  button.sec{background:var(--chip);color:var(--ink)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .tile .k{font-size:12px;color:var(--muted);font-weight:600}
+  .tile .v{font-size:24px;font-weight:800;margin-top:2px}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border-bottom:1px solid var(--line);padding:8px 9px;text-align:left;vertical-align:top}
+  th{background:var(--chip);position:sticky;top:0}
+  .tblwrap{overflow-x:auto;max-height:70vh}
+  .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;font-weight:700}
+  .pass{background:var(--okbg);color:var(--brand)} .fail{background:var(--warnbg);color:var(--warn)}
+  .muted{color:var(--muted)} .warn{color:var(--warn)} .ok{color:var(--brand)}
+  .msg{border-radius:10px;padding:10px 12px;font-size:14px;margin:8px 0}
+  .msg.warn{background:var(--warnbg);color:var(--warn)} .msg.ok{background:var(--okbg);color:var(--brand)}
+  details summary{cursor:pointer;color:var(--accent);font-size:12px}
+  .ans{font-size:12px;margin-top:4px}
+  .ans .w{color:var(--warn)} .ans .r{color:var(--brand)}
+  code{background:var(--chip);padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🗂️ 每日安全測驗 · 承辦看板</h1>
+  <div class="sub">拆櫃／拉線／疊櫃　每日三題　·　最高權限：陳尚福（工號 26516）</div>
+  <div class="tabs">
+    <button data-t="board" class="on">📊 成績看板</button>
+    <button data-t="ext">⏰ 延後審核</button>
+    <button data-t="bank">📚 題庫管理</button>
+    <button data-t="center">🏢 中心管理</button>
+  </div>
+  <div id="view"><div class="card">載入中…</div></div>
+</div>
+
+<script>
+const API = "https://hmqnlovyzlvvnkqmfwtt.supabase.co/functions/v1/daily";
+const K = new URLSearchParams(location.search).get("k") || "";
+const view = document.getElementById("view");
+const esc = s => (s ?? "").replace(/[&<>]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]));
+const todayStr = () => new Date(Date.now()+8*3600000).toISOString().slice(0,10);
+function fmtTime(shiftMs){ return new Date(shiftMs).toISOString().slice(11,16); } // shift 空間 → 台北 HH:MM
+
+async function api(action, opts={}){
+  const isPost = !!opts.body;
+  const q = opts.query ? "&"+opts.query : "";
+  const res = await fetch(`${API}?action=${action}&k=${encodeURIComponent(K)}${q}`, {
+    method:isPost?"POST":"GET", headers:isPost?{"Content-Type":"application/json"}:{},
+    body:isPost?JSON.stringify(opts.body):undefined });
+  return res.json();
+}
+
+document.querySelectorAll(".tabs button").forEach(b=>{
+  b.onclick = ()=>{ document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); TAB[b.dataset.t](); };
+});
+
+const TAB = { board: renderBoard, ext: renderExt, bank: renderBank, center: renderCenter };
+
+// ============ 成績看板 ============
+let boardDate = todayStr();
+async function renderBoard(){
+  view.innerHTML = `<div class="card">
+    <div class="row">日期：<input type="date" id="d" value="${boardDate}">
+      <button class="act" id="load">查詢</button>
+      <button class="sec" id="csv">匯出 CSV</button>
+      <button class="sec" id="rf">🔄 重新整理</button></div>
+    <div id="tiles"></div><div id="tbl">載入中…</div></div>`;
+  document.getElementById("load").onclick = ()=>{ boardDate = document.getElementById("d").value; loadBoard(); };
+  document.getElementById("rf").onclick = loadBoard;
+  document.getElementById("csv").onclick = exportCsv;
+  loadBoard();
+}
+let lastRows = [];
+async function loadBoard(){
+  const r = await api("results", { query:`date=${boardDate}` });
+  if(r.error){ document.getElementById("tbl").innerHTML = `<div class="msg warn">讀取失敗（token 無效？）</div>`; return; }
+  lastRows = r.rows||[];
+  const s = r.summary||{total:0,passed:0,byCompany:{},byCenter:{}};
+  const comp = Object.entries(s.byCompany).map(([k,v])=>`${k} ${v.done}人(過${v.pass})`).join("　") || "—";
+  const cent = Object.entries(s.byCenter).map(([k,v])=>`${k} ${v}`).join("　") || "—";
+  document.getElementById("tiles").innerHTML = `<div class="tiles">
+    <div class="tile"><div class="k">完成人數</div><div class="v">${s.total}</div></div>
+    <div class="tile"><div class="k">全對通過</div><div class="v ok">${s.passed}</div></div>
+    <div class="tile"><div class="k">未全對</div><div class="v warn">${s.total-s.passed}</div></div>
+    <div class="tile" style="grid-column:span 2"><div class="k">各人力公司</div><div style="font-size:13px;margin-top:4px">${esc(comp)}</div></div>
+    </div><div class="msg" style="background:var(--chip)">各中心：${esc(cent)}</div>`;
+  if(!lastRows.length){ document.getElementById("tbl").innerHTML = `<div class="msg" style="background:var(--chip)">${boardDate} 尚無人作答。</div>`; return; }
+  const body = lastRows.map(r=>{
+    const ans = (r.answers||[]).map(a=>`<div class="ans"><span class="${a.ok?'r':'w'}">${a.ok?'✔':'✘'}</span> 【${esc(a.job_type)}】${esc(a.question)}<br>作答：${esc(a.chosen||'（未答）')}${a.ok?'':` → 正解：<b>${esc(a.correct)}</b>`}</div>`).join("");
+    const co = compByEmp(r.emp_id);
+    return `<tr>
+      <td>${esc(r.center||'')}</td><td>${esc(co)}</td><td><code>${esc(r.emp_id)}</code></td>
+      <td>${esc(r.name)}</td>
+      <td>${r.score}/${r.total} <span class="pill ${r.passed?'pass':'fail'}">${r.passed?'通過':'未過'}</span></td>
+      <td>${r.duration_sec!=null?r.duration_sec+'s':''}</td>
+      <td>${new Date(r.created_at).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</td>
+      <td><details><summary>明細</summary>${ans}</details></td></tr>`;
+  }).join("");
+  document.getElementById("tbl").innerHTML = `<div class="tblwrap"><table>
+    <thead><tr><th>中心</th><th>公司</th><th>工號</th><th>姓名</th><th>分數</th><th>用時</th><th>交卷</th><th>答題</th></tr></thead>
+    <tbody>${body}</tbody></table></div>`;
+}
+function compByEmp(e){ e=String(e); if(e.startsWith("000"))return"新竹物流"; if(e.startsWith("10"))return"有根"; if(e.startsWith("20"))return"丞閎"; if(e.startsWith("30"))return"信林"; return"其他"; }
+function exportCsv(){
+  if(!lastRows.length){ alert("無資料"); return; }
+  const head = ["日期","中心","公司","工號","姓名","分數","滿分","通過","用時秒","交卷時間"];
+  const lines = [head.join(",")];
+  for(const r of lastRows){
+    lines.push([r.test_date, r.center||"", compByEmp(r.emp_id), r.emp_id, r.name, r.score, r.total,
+      r.passed?"是":"否", r.duration_sec??"", new Date(r.created_at).toLocaleString("zh-TW")]
+      .map(x=>`"${String(x).replace(/"/g,'""')}"`).join(","));
+  }
+  const blob = new Blob(["﻿"+lines.join("\n")], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `每日測驗_${boardDate}.csv`; a.click();
+}
+
+// ============ 延後審核 ============
+async function renderExt(){
+  view.innerHTML = `<div class="card"><div id="ex">載入中…</div></div>`;
+  loadExt();
+}
+async function loadExt(){
+  const date = todayStr();
+  const r = await api("pending", { query:`date=${date}` });
+  const exts = (r.extensions||[]).map(e=>`<tr><td>${e.scope==='all'?'全體':'工號 '+esc(e.emp_id)}</td><td>+${e.minutes} 分</td><td>${esc(e.granted_by||'')}</td><td>${new Date(e.created_at).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</td></tr>`).join("") || `<tr><td colspan="4" class="muted">今日尚無延後紀錄</td></tr>`;
+  document.getElementById("ex").innerHTML = `
+    <div class="tiles">
+      <div class="tile"><div class="k">日期</div><div class="v" style="font-size:18px">${date}</div></div>
+      <div class="tile"><div class="k">原始截止</div><div class="v" style="font-size:18px">19:00</div></div>
+      <div class="tile"><div class="k">目前有效截止</div><div class="v ${r.past?'warn':'ok'}" style="font-size:18px">${fmtTime(r.deadline)}</div></div>
+      <div class="tile"><div class="k">狀態</div><div class="v ${r.past?'warn':'ok'}" style="font-size:18px">${r.past?'已截止':'開放中'}</div></div>
+    </div>
+    <div class="msg" style="background:var(--chip)">逾時者須經 <b>陳尚福（26516）</b> 核准延後才可補測，每次 +30 分鐘。</div>
+    <div class="row">
+      <button class="act" id="gall">全體 +30 分</button>
+      <input id="gemp" placeholder="指定工號（8碼/新物5碼）" style="width:220px">
+      <button class="act" id="gemp2">指定工號 +30 分</button>
+      <button class="sec" id="rf">🔄 重新整理</button>
+    </div>
+    <div id="gmsg"></div>
+    <h3 style="font-size:15px;margin:14px 0 6px">今日延後紀錄</h3>
+    <div class="tblwrap"><table><thead><tr><th>對象</th><th>延後</th><th>核准人</th><th>時間</th></tr></thead><tbody>${exts}</tbody></table></div>`;
+  document.getElementById("rf").onclick = loadExt;
+  document.getElementById("gall").onclick = async ()=>{
+    if(!confirm("確定「全體」延後 30 分鐘？")) return;
+    const g = await api("grant", { body:{ scope:"all" } });
+    msg(g.ok?`✅ 已延後，全體有效截止 ${fmtTime(g.deadline)}`:"❌ 失敗", g.ok); loadExt();
+  };
+  document.getElementById("gemp2").onclick = async ()=>{
+    const emp = document.getElementById("gemp").value.trim();
+    if(!emp){ msg("請輸入工號",false); return; }
+    const g = await api("grant", { body:{ scope:"emp", emp_id:emp } });
+    msg(g.ok?`✅ 已為工號 ${emp} 延後至 ${fmtTime(g.deadline)}`:("❌ "+(g.reason||"失敗")), g.ok); loadExt();
+  };
+  function msg(t,ok){ document.getElementById("gmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+}
+
+// ============ 題庫管理 ============
+async function renderBank(){
+  view.innerHTML = `<div class="card"><div class="sub">拆櫃為單選題（可編輯選項）；拉線／疊櫃為是非題。選項不齊或需停用可在此調整。改完按「儲存」。</div><div id="bk">載入中…</div></div>`;
+  const r = await api("bank_list");
+  if(r.error){ document.getElementById("bk").innerHTML = `<div class="msg warn">讀取失敗</div>`; return; }
+  const rows = r.rows||[];
+  const html = rows.map(q=>{
+    const opts = (q.options||[]).join("\n");
+    return `<tr data-id="${q.id}">
+      <td>${esc(q.job_type)}</td>
+      <td style="min-width:220px">${esc(q.question)}</td>
+      <td><textarea class="o" rows="${Math.max(2,(q.options||[]).length)}" style="width:230px;font-size:12px;background:var(--bg);color:var(--ink);border:1.5px solid var(--line);border-radius:8px;padding:6px">${esc(opts)}</textarea><div class="muted" style="font-size:11px">每行一個選項</div></td>
+      <td><input class="c" value="${esc(q.correct)}" style="width:180px"></td>
+      <td><input type="checkbox" class="a" ${q.active?'checked':''}></td>
+      <td><button class="act sv">儲存</button></td></tr>`;
+  }).join("");
+  document.getElementById("bk").innerHTML = `<div class="tblwrap"><table>
+    <thead><tr><th>工種</th><th>題目</th><th>選項</th><th>正解(需與某選項完全相同)</th><th>啟用</th><th></th></tr></thead>
+    <tbody>${html}</tbody></table></div><div id="bmsg"></div>`;
+  document.querySelectorAll("#bk tr[data-id]").forEach(tr=>{
+    tr.querySelector(".sv").onclick = async ()=>{
+      const id = +tr.dataset.id;
+      const options = tr.querySelector(".o").value.split("\n").map(s=>s.trim()).filter(Boolean);
+      const correct = tr.querySelector(".c").value.trim();
+      const active = tr.querySelector(".a").checked;
+      if(active && !options.includes(correct)){ bmsg("⚠️ 正解必須與某個選項完全相同",false); return; }
+      if(active && options.length<2){ bmsg("⚠️ 啟用題目至少需 2 個選項",false); return; }
+      const g = await api("bank_update", { body:{ id, options, correct, active } });
+      bmsg(g.ok?`✅ 已儲存 #${id}`:"❌ 失敗", g.ok);
+    };
+  });
+  function bmsg(t,ok){ document.getElementById("bmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+}
+
+// ============ 中心管理 ============
+async function renderCenter(){
+  view.innerHTML = `<div class="card">
+    <div class="row"><input id="cn" placeholder="轉運中心名稱（例：楊梅轉運中心）" style="width:260px">
+      <input id="cs" type="number" placeholder="排序" value="100" style="width:90px">
+      <button class="act" id="add">新增／更新</button></div>
+    <div id="cmsg"></div>
+    <div class="msg" style="background:var(--chip)">登入頁下拉會顯示這裡「啟用」的中心。取消勾選＝停用（不刪除紀錄）。</div>
+    <div id="clist">載入中…</div></div>`;
+  document.getElementById("add").onclick = async ()=>{
+    const name = document.getElementById("cn").value.trim();
+    const sort = +document.getElementById("cs").value || 100;
+    if(!name){ cmsg("請輸入名稱",false); return; }
+    const g = await api("center_upsert", { body:{ name, sort, active:true } });
+    cmsg(g.ok?"✅ 已儲存":"❌ 失敗", g.ok); loadCenters();
+  };
+  loadCenters();
+  function cmsg(t,ok){ document.getElementById("cmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+}
+async function loadCenters(){
+  // 用公開 centers 只回啟用中的；改用 bank? 這裡直接顯示啟用清單
+  const r = await api("centers");
+  const list = (r.centers||[]);
+  document.getElementById("clist").innerHTML = `<div class="tblwrap"><table>
+    <thead><tr><th>啟用中的轉運中心</th><th></th></tr></thead><tbody>${
+      list.map(c=>`<tr><td>${esc(c)}</td><td><button class="sec dis" data-n="${esc(c)}">停用</button></td></tr>`).join("")||'<tr><td class="muted">無</td></tr>'
+    }</tbody></table></div>`;
+  document.querySelectorAll("#clist .dis").forEach(b=>{
+    b.onclick = async ()=>{ if(!confirm(`停用「${b.dataset.n}」？`))return;
+      await api("center_upsert", { body:{ name:b.dataset.n, active:false } }); loadCenters(); };
+  });
+}
+
+if(!K){ view.innerHTML = `<div class="card"><div class="msg warn">缺少管理連結參數（?k=…）。</div></div>`; }
+else renderBoard();
+</script>
+</body>
+</html>
