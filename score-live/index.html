@@ -175,7 +175,7 @@ const TOKEN = new URLSearchParams(location.search).get("k") || "";
 let ALL = [];      // all records
 let RETEST = [];   // retest_records（複測制，主管建議#2）
 let DATES = [];    // distinct sorted dates
-let state = { job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, company: "全部", openBL: false, openNote: false };
+let state = { job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, company: "全部", year: "全部", month: "全部", openBL: false, openNote: false };
 
 const dateOK = r => (!state.from || r.test_date >= state.from) && (!state.to || r.test_date <= state.to);
 const jobOK = r => state.job === "全部" || r.job_type === state.job;
@@ -387,7 +387,12 @@ function render() {
     <input type="search" id="q" placeholder="🔍 搜尋姓名或工號" value="${esc(state.q)}">
   </div>`;
 
-  const dopt = (sel) => DATES.map(d => `<option value="${d}" ${d === sel ? "selected" : ""}>${d.slice(5)}</option>`).join("");
+  const scoped = DATES.filter(d => (state.year === "全部" || d.slice(0, 4) === state.year) && (state.month === "全部" || d.slice(5, 7) === state.month));
+  const dopt = (sel) => scoped.map(d => `<option value="${d}" ${d === sel ? "selected" : ""}>${d.slice(5)}</option>`).join("");
+  const years = ["全部", ...[...new Set(DATES.map(d => d.slice(0, 4)))].sort()];
+  const yearOpts = years.map(y => `<option value="${y}" ${y === state.year ? "selected" : ""}>${y === "全部" ? "全部年" : y + "年"}</option>`).join("");
+  const months = ["全部", ...[...new Set(DATES.filter(d => state.year === "全部" || d.slice(0, 4) === state.year).map(d => d.slice(5, 7)))].sort()];
+  const monthOpts = months.map(m => `<option value="${m}" ${m === state.month ? "selected" : ""}>${m === "全部" ? "全部月" : (+m) + "月"}</option>`).join("");
   const COMP_ORDER = ["信林", "有根", "丞閎", "新竹物流正職", "其他"];
   const compsPresent = ["全部", ...COMP_ORDER.filter(c => ALL.some(r => companyOf(r.emp_id) === c))];
   const compOpts = compsPresent.map(c => `<option value="${c}" ${c === state.company ? "selected" : ""}>${c}</option>`).join("");
@@ -395,11 +400,13 @@ function render() {
     <span style="color:var(--muted);font-size:13px;font-weight:600">🏢 人力公司</span>
     <select id="compSel">${compOpts}</select>
     ${state.company !== "全部" ? `<span style="color:var(--accent);font-size:12px;font-weight:700">僅 ${state.company}</span>` : ""}
-    <span style="color:var(--muted);font-size:13px;font-weight:600;margin-left:8px">📅 日期區間</span>
+    <span style="color:var(--muted);font-size:13px;font-weight:600;margin-left:8px">📅 期間</span>
+    <select id="ySel">${yearOpts}</select>
+    <select id="mSel">${monthOpts}</select>
     <select id="dFrom">${dopt(state.from)}</select>
     <span style="color:var(--muted)">–</span>
     <select id="dTo">${dopt(state.to)}</select>
-    <button class="theme-btn" id="dReset">全部日期</button>
+    <button class="theme-btn" id="dReset">全部</button>
     ${(state.from !== DATES[0] || state.to !== DATES[DATES.length-1]) ? `<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${state.from.slice(5)}~${state.to.slice(5)}</span>` : ""}
   </div>`;
 
@@ -721,8 +728,16 @@ function bind() {
   const dFrom = document.getElementById("dFrom"), dTo = document.getElementById("dTo");
   if (dFrom) dFrom.onchange = () => { state.from = dFrom.value; if (state.to < state.from) state.to = state.from; render(); };
   if (dTo) dTo.onchange = () => { state.to = dTo.value; if (state.from > state.to) state.from = state.to; render(); };
+  const ySel = document.getElementById("ySel");
+  if (ySel) ySel.onchange = () => { state.year = ySel.value; state.month = "全部";
+    const ds = DATES.filter(d => state.year === "全部" || d.slice(0, 4) === state.year);
+    state.from = ds[0]; state.to = ds[ds.length - 1]; render(); };
+  const mSel = document.getElementById("mSel");
+  if (mSel) mSel.onchange = () => { state.month = mSel.value;
+    const ds = DATES.filter(d => (state.year === "全部" || d.slice(0, 4) === state.year) && (state.month === "全部" || d.slice(5, 7) === state.month));
+    state.from = ds[0]; state.to = ds[ds.length - 1]; render(); };
   const dReset = document.getElementById("dReset");
-  if (dReset) dReset.onclick = () => { state.from = DATES[0]; state.to = DATES[DATES.length - 1]; render(); };
+  if (dReset) dReset.onclick = () => { state.year = "全部"; state.month = "全部"; state.from = DATES[0]; state.to = DATES[DATES.length - 1]; render(); };
   const compSel = document.getElementById("compSel");
   if (compSel) compSel.onchange = () => { state.company = compSel.value; render(); };
   document.querySelectorAll("th[data-sort]").forEach(th => th.onclick = () => {
