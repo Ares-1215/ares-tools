@@ -356,13 +356,13 @@ function render() {
   const jobs = ["全部", "拆櫃", "拉線", "疊櫃"];
   let h = "";
   h += `<div class="tiles">
-    <div class="tile"><div class="k">總測驗人日</div><div class="v">${s.total}</div></div>
+    <div class="tile"><div class="k">總測驗人次</div><div class="v">${s.total}</div></div>
     <div class="tile"><div class="k">受測人數</div><div class="v">${s.people} <small>人</small></div></div>
     <div class="tile"><div class="k">首測答對率</div><div class="v" style="color:var(--brand)">${pct(s.rightRate)}</div></div>
     <div class="tile"><div class="k">首測答錯人次</div><div class="v" style="color:var(--warn)">${s.wrong}</div></div>
   </div>`;
 
-  h += `<div class="tilenote">💡 「受測人數」＝實際答題的<b>不重複姓名數</b>；因到工人員跨組安排，一人可能橫跨多個工種，故「總測驗人日」大於「受測人數」屬正常現象。點姓名可看<b>個人詳情</b>。</div>`;
+  h += `<div class="tilenote">💡 「受測人數」＝實際答題的<b>不重複姓名數</b>；因到工人員跨組安排，一人可能橫跨多個工種，故「總測驗人次」大於「受測人數」屬正常現象。點姓名可看<b>個人詳情</b>。</div>`;
 
   h += `<div class="note"><div class="noteh"><span>📋 題目正解說明 · 7/16 拆櫃（表單答案曾設錯，已更正）</span>
     <button class="notebtn" id="noteToggle">${state.openNote ? "收合 ▾" : "展開 ▸"}</button></div>
