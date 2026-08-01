@@ -187,7 +187,61 @@ async function loadExt(){
 
 // ============ 題庫管理 ============
 async function renderBank(){
-  view.innerHTML = `<div class="card"><div class="sub">拆櫃為單選題（可編輯選項）；拉線／疊櫃為是非題。選項不齊或需停用可在此調整。改完按「儲存」。</div><div id="bk">載入中…</div></div>`;
+  view.innerHTML = `
+  <div class="card">
+    <b>➕ 新增題目</b>
+    <div class="row" style="margin-top:10px">
+      <select id="njob" style="width:120px"><option value="拆櫃">拆櫃</option><option value="拉線">拉線</option><option value="疊櫃">疊櫃</option></select>
+      <select id="ntype" style="width:130px"><option value="tf">是非題</option><option value="choice">單選題</option></select>
+    </div>
+    <input id="nq" placeholder="題目文字" style="width:100%;margin-top:8px">
+    <div id="nchoice" style="display:none;margin-top:8px">
+      <textarea id="nopts" rows="3" placeholder="每行一個選項，例如：&#10;1.由人工異常排出&#10;2.直接上分貨機即可&#10;3.裝密林籃上分貨機" style="width:100%;background:var(--bg);color:var(--ink);border:1.5px solid var(--line);border-radius:9px;padding:9px;font-size:14px"></textarea>
+      <input id="ncorrect" placeholder="正解（需與上面某一選項文字完全相同）" style="width:100%;margin-top:8px">
+    </div>
+    <div id="ntf" style="margin-top:8px">正解：
+      <label style="font-weight:400"><input type="radio" name="ntfc" value="是" checked style="width:auto"> 是</label>
+      <label style="font-weight:400"><input type="radio" name="ntfc" value="否" style="width:auto"> 否</label>
+    </div>
+    <button class="act" id="nadd" style="margin-top:10px">新增到題庫</button>
+    <div id="nmsg"></div>
+  </div>
+  <div class="card"><div class="sub">下方為既有題目。拆櫃為單選題（可編輯選項）；拉線／疊櫃為是非題。選項不齊或需停用可在此調整，改完按「儲存」。</div><div id="bk">載入中…</div></div>`;
+  wireAddForm();
+  await loadBankList();
+}
+
+function wireAddForm(){
+  const job = document.getElementById("njob"), type = document.getElementById("ntype");
+  const choiceBox = document.getElementById("nchoice"), tfBox = document.getElementById("ntf");
+  function syncType(){ const t = type.value; choiceBox.style.display = t==="choice"?"block":"none"; tfBox.style.display = t==="tf"?"block":"none"; }
+  // 選工種自動帶題型：拉線/疊櫃→是非；拆櫃→單選
+  job.onchange = ()=>{ type.value = job.value==="拆櫃"?"choice":"tf"; syncType(); };
+  type.onchange = syncType;
+  type.value = "choice"; syncType(); // 預設拆櫃單選
+  document.getElementById("nadd").onclick = async ()=>{
+    const nmsg = document.getElementById("nmsg");
+    const body = { job_type: job.value, qtype: type.value, question: document.getElementById("nq").value.trim() };
+    if(!body.question){ nmsg.innerHTML = `<div class="msg warn">請輸入題目</div>`; return; }
+    if(type.value==="tf"){ body.correct = document.querySelector('input[name=ntfc]:checked').value; }
+    else {
+      body.options = document.getElementById("nopts").value.split("\n").map(s=>s.trim()).filter(Boolean);
+      body.correct = document.getElementById("ncorrect").value.trim();
+      if(body.options.length<2){ nmsg.innerHTML = `<div class="msg warn">單選題至少需 2 個選項</div>`; return; }
+      if(!body.options.includes(body.correct)){ nmsg.innerHTML = `<div class="msg warn">正解必須與某個選項文字完全相同</div>`; return; }
+    }
+    const g = await api("bank_add", { body });
+    if(g.ok){ nmsg.innerHTML = `<div class="msg ok">✅ 已新增</div>`;
+      document.getElementById("nq").value=""; if(document.getElementById("nopts")) document.getElementById("nopts").value=""; if(document.getElementById("ncorrect")) document.getElementById("ncorrect").value="";
+      loadBankList();
+    } else {
+      const m = { duplicate:"此工種已有相同題目", bad_job:"工種錯誤", empty_q:"請輸入題目", need_2_options:"至少需 2 個選項", correct_mismatch:"正解需與某選項相同" }[g.reason] || "新增失敗";
+      nmsg.innerHTML = `<div class="msg warn">${esc(m)}</div>`;
+    }
+  };
+}
+
+async function loadBankList(){
   const r = await api("bank_list");
   if(r.error){ document.getElementById("bk").innerHTML = `<div class="msg warn">讀取失敗</div>`; return; }
   const rows = r.rows||[];
