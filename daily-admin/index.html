@@ -206,8 +206,21 @@ async function renderBank(){
     <button class="act" id="nadd" style="margin-top:10px">新增到題庫</button>
     <div id="nmsg"></div>
   </div>
+  <div class="card">
+    <div class="row"><b>🔄 從 Google 表單自動同步</b>
+      <button class="act" id="nsync">立即同步新題目</button></div>
+    <div class="muted" style="font-size:12px">系統每天自動比對表單資料（training_records），把新表單出現的新題目自動補進題庫（是非題自動補是/否；單選題選項不齊者會先停用，待你補選項）。此鈕為手動立即執行。</div>
+    <div id="syncmsg"></div>
+  </div>
   <div class="card"><div class="sub">下方為既有題目。拆櫃為單選題（可編輯選項）；拉線／疊櫃為是非題。選項不齊或需停用可在此調整，改完按「儲存」。</div><div id="bk">載入中…</div></div>`;
   wireAddForm();
+  document.getElementById("nsync").onclick = async ()=>{
+    const m = document.getElementById("syncmsg");
+    m.innerHTML = `<div class="msg" style="background:var(--chip)">同步中…</div>`;
+    const g = await api("bank_sync", { body:{} });
+    if(g.ok){ m.innerHTML = `<div class="msg ok">✅ 同步完成，新增 ${g.added} 題${g.added?"（選項不齊者已停用，請於下方補選項後啟用）":"（沒有新題目）"}</div>`; loadBankList(); }
+    else { m.innerHTML = `<div class="msg warn">❌ 同步失敗</div>`; }
+  };
   await loadBankList();
 }
 
