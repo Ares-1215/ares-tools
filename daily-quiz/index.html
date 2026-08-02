@@ -78,18 +78,6 @@ function deviceId(){
 }
 const savedEmp = () => localStorage.getItem("daily_emp") || "";
 const savedName = () => localStorage.getItem("daily_name") || "";
-// 隱藏設定：允許同工號在不同「中心／單位」重複作答（發送＋到著）
-const isMulti = () => localStorage.getItem("daily_multi") === "1";
-// 連點標題 5 下叫出隱藏設定
-let _tap = 0, _tapT = null;
-function setupSecret(){
-  const h = document.querySelector("header h1"); if(!h) return;
-  h.addEventListener("click", ()=>{
-    _tap++; clearTimeout(_tapT); _tapT = setTimeout(()=>_tap=0, 1500);
-    if(_tap>=5){ _tap=0; const box = document.getElementById("multiBox");
-      if(box){ box.style.display="block"; box.scrollIntoView({behavior:"smooth",block:"center"}); } }
-  });
-}
 
 async function api(action, opts={}){
   const isPost = !!opts.body;
@@ -140,19 +128,11 @@ function renderLogin(){
     <input id="name" placeholder="請輸入姓名" value="${esc(savedName())}" autocomplete="off">
     <button id="go">開始測驗</button>
     <div class="lock" id="lock"></div>
-    <div id="multiBox" style="display:${isMulti()?"block":"none"};margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)">
-      <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;margin:0">
-        <input type="checkbox" id="multiChk" style="width:auto;margin:0" ${isMulti()?"checked":""}>
-        允許同工號在不同「中心／單位」重複作答
-      </label>
-      <div class="hint" style="margin-top:6px">🔒 隱藏設定，僅供<b>發送＋到著都要上班</b>、但工號相同的人員使用。開啟後：同一支手機、同工號，只要<b>中心或單位不一樣</b>就能再作答一次（各單位各記一筆）。一般人員請保持關閉。</div>
-    </div>
   </div>`;
   loadCenters(document.getElementById("center")).then(()=>{
     const c = localStorage.getItem("daily_center"); if(c) document.getElementById("center").value = c;
   });
   const u = localStorage.getItem("daily_unit"); if(u) document.getElementById("unit").value = u;
-  document.getElementById("multiChk").onchange = e => { localStorage.setItem("daily_multi", e.target.checked ? "1" : "0"); };
   document.getElementById("go").onclick = doLogin;
 }
 
@@ -168,7 +148,7 @@ async function doLogin(){
   if(!emp){ lock.textContent = "請輸入工號。"; return; }
   if(!name){ lock.textContent = "請輸入姓名。"; return; }
   const btn = document.getElementById("go"); btn.disabled = true; btn.textContent = "登入中…";
-  const r = await api("login", { body:{ emp_id:emp, name, center, unit, multi:isMulti(), device_id:deviceId() } });
+  const r = await api("login", { body:{ emp_id:emp, name, center, unit, device_id:deviceId() } });
   btn.disabled = false; btn.textContent = "開始測驗";
   if(!r.ok){
     const m = { bad_emp:"工號格式不符（請輸入 8 碼；新竹物流可輸入 5 碼）。",
@@ -232,7 +212,7 @@ async function doSubmit(){
   const btn = document.getElementById("submit"); btn.disabled = true; btn.textContent = "交卷中…";
   const answers = STATE.questions.map(q=>({ id:q.id, chosen:STATE.answers[q.id] }));
   const r = await api("submit", { body:{
-    emp_id:STATE.emp, name:STATE.name, center:STATE.center, unit:STATE.unit, multi:isMulti(), device_id:deviceId(),
+    emp_id:STATE.emp, name:STATE.name, center:STATE.center, unit:STATE.unit, device_id:deviceId(),
     duration_sec:Math.round((Date.now()-STATE.startTs)/1000), answers } });
   clearInterval(STATE.timer);
   if(!r.ok){
@@ -274,7 +254,6 @@ function renderBlocked(){
     <button class="sec" onclick="location.reload()">重新整理</button></div>`;
 }
 
-setupSecret();
 boot();
 </script>
 </body>
