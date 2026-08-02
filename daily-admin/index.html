@@ -120,18 +120,20 @@
       <h1>🗂️ 每日安全測驗 · 承辦看板</h1>
       <div class="sub">拆櫃／拉線／疊櫃　每日三題　·　最高權限：陳尚福（工號 26516）</div>
     </div>
-    <div class="toolbtns noprint">
+    <div class="toolbtns noprint" style="display:none">
       <button class="theme-btn" id="csvBtn">⬇ 匯出 CSV</button>
       <button class="theme-btn" id="printBtn">🖨 列印</button>
       <button class="theme-btn" id="themeBtn">🌓 主題</button>
     </div>
   </header>
-  <div class="tabs noprint">
+  <div class="tabs noprint" id="tabs" style="display:none">
     <button data-t="board" class="on">📊 成績看板</button>
     <button data-t="ext">⏰ 延後審核</button>
     <button data-t="bank">📚 題庫管理</button>
     <button data-t="center">🏢 中心管理</button>
+    <button data-t="perm" id="permTab" style="display:none">🔑 權限管理</button>
   </div>
+  <div id="userbar" class="noprint" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;margin:-4px 0 12px"></div>
   <div id="view"><div class="card">載入中…</div></div>
 </div>
 
@@ -147,10 +149,16 @@ const d2 = s => (s||"").slice(5); // MM-DD
 const todayStr = () => new Date(Date.now()+8*3600000).toISOString().slice(0,10);
 function fmtTime(shiftMs){ return new Date(shiftMs).toISOString().slice(11,16); }
 
+// ---- 登入 / 權限 ----
+let SESS = localStorage.getItem("dadm_sess") || "";
+let ME = { emp:"", name:"", is_super:false, active:false };
+const canEdit = () => ME.active || ME.is_super;
+
 async function api(action, opts={}){
   const isPost = !!opts.body;
   const q = opts.query ? "&"+opts.query : "";
-  const res = await fetch(`${API}?action=${action}&k=${encodeURIComponent(K)}${q}`, {
+  const s = SESS ? "&sess="+encodeURIComponent(SESS) : "";
+  const res = await fetch(`${API}?action=${action}&k=${encodeURIComponent(K)}${s}${q}`, {
     method:isPost?"POST":"GET", headers:isPost?{"Content-Type":"application/json"}:{},
     body:isPost?JSON.stringify(opts.body):undefined });
   return res.json();
@@ -176,7 +184,59 @@ document.querySelectorAll(".tabs button").forEach(b=>{
   b.onclick = ()=>{ document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
     b.classList.add("on"); curTab=b.dataset.t; TAB[curTab](); };
 });
-const TAB = { board: renderBoard, ext: renderExt, bank: renderBank, center: renderCenter };
+const TAB = { board: renderBoard, ext: renderExt, bank: renderBank, center: renderCenter, perm: renderPerm };
+
+// ---- 登入畫面 / 使用者列 / 權限鎖 ----
+function hideChrome(){ document.getElementById("tabs").style.display="none";
+  document.querySelector(".toolbtns").style.display="none"; document.getElementById("userbar").innerHTML=""; }
+function showChrome(){ document.getElementById("tabs").style.display=""; document.querySelector(".toolbtns").style.display="flex"; }
+function setMe(me){ ME={ emp:me.emp_id, name:me.name||"", is_super:!!me.is_super, active:!!me.active };
+  const pt=document.getElementById("permTab"); if(pt) pt.style.display = ME.is_super?"":"none"; renderUserBar(); }
+function renderUserBar(){
+  const el=document.getElementById("userbar"); if(!el) return;
+  const badge = ME.is_super?'<span class="pill ok">最高權限</span>':(ME.active?'<span class="pill ok">可操作</span>':'<span class="pill mut">僅檢視</span>');
+  el.innerHTML = `<span class="muted">👤 ${esc(ME.name||"")}（${esc(ME.emp)}）</span> ${badge}
+    <button class="theme-btn" id="logoutBtn" style="margin-left:auto">登出</button>`;
+  document.getElementById("logoutBtn").onclick=()=>{ SESS=""; localStorage.removeItem("dadm_sess");
+    ME={emp:"",name:"",is_super:false,active:false}; RANGE_LOADED=false; renderLogin(); };
+}
+async function boot(){
+  if(SESS){ const me=await api("admin_me"); if(me&&me.ok){ setMe(me); return afterLogin(); }
+    SESS=""; localStorage.removeItem("dadm_sess"); }
+  renderLogin();
+}
+function afterLogin(){ showChrome(); curTab="board";
+  document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on", x.dataset.t==="board"));
+  renderBoard(); }
+function renderLogin(){
+  hideChrome();
+  view.innerHTML = `<div class="card" style="max-width:380px;margin:36px auto">
+    <b style="font-size:17px">🔐 承辦看板登入</b>
+    <div class="sub" style="margin:4px 0 12px">請輸入工號與密碼</div>
+    <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px">工號</label>
+    <input id="li_emp" inputmode="numeric" placeholder="工號（8碼/新物5碼）" style="width:100%;margin-bottom:10px">
+    <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px">密碼</label>
+    <input id="li_pwd" type="password" placeholder="密碼（預設為工號）" style="width:100%;margin-bottom:12px">
+    <button class="act" id="li_go" style="width:100%">登入</button>
+    <div id="li_msg"></div>
+    <div class="muted" style="font-size:12px;margin-top:10px">預設密碼為您的工號。登入後可檢視各功能；延後審核／題庫／中心／刪除紀錄需經陳尚福（26516）開通權限。</div>
+  </div>`;
+  const go = async ()=>{
+    const emp=document.getElementById("li_emp").value.trim(), pwd=document.getElementById("li_pwd").value;
+    if(!emp){ limsg("請輸入工號",false); return; }
+    const r = await api("admin_login", { body:{ emp_id:emp, pwd } });
+    if(!r||!r.ok){ limsg({bad_emp:"工號格式不符",bad_pwd:"密碼錯誤"}[r&&r.reason]||"登入失敗",false); return; }
+    SESS=r.sess; localStorage.setItem("dadm_sess",SESS); setMe(r); afterLogin();
+  };
+  document.getElementById("li_go").onclick = go;
+  document.getElementById("li_pwd").addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+  function limsg(t,ok){ document.getElementById("li_msg").innerHTML=`<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+}
+// 權限鎖：非可操作者，將寫入類按鈕/欄位停用
+function lockNote(){ return canEdit()?"":`<div class="msg warn">🔒 你目前為「僅檢視」權限，無法在此操作。請洽陳尚福（工號 26516）開通。</div>`; }
+function applyLock(){ if(canEdit()) return;
+  view.querySelectorAll("button.act, #bk .sv, #clist .dis, #plist button").forEach(b=>{ b.disabled=true; b.style.opacity=".5"; b.style.cursor="not-allowed"; });
+  view.querySelectorAll("input, select, textarea").forEach(el=>{ el.disabled=true; }); }
 
 /* ==========================================================
    成績看板（比照 score-live 分析）
@@ -202,7 +262,8 @@ async function loadRange(){
   }
   DATES = [...new Set(RESULTS.map(r=>r.test_date))].sort();
   if(!DATES.length) DATES=[todayStr()];
-  bs.from = DATES[0]; bs.to = DATES[DATES.length-1];
+  if(!bs.from || !DATES.includes(bs.from)) bs.from = DATES[0];
+  if(!bs.to || !DATES.includes(bs.to)) bs.to = DATES[DATES.length-1];
   RANGE_LOADED = true;
 }
 
@@ -364,11 +425,13 @@ function renderBoardDay(){
       <td>${r.score}/${r.total} <span class="pill ${r.passed?'ok':'warn'}">${r.passed?'通過':'未過'}</span></td>
       <td>${r.duration_sec!=null?r.duration_sec+'s':''}</td>
       <td>${new Date(r.created_at).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</td>
-      <td><details><summary>明細</summary>${ans}</details></td></tr>`;
+      <td><details><summary>明細</summary>${ans}</details></td>
+      ${canEdit()?`<td><button class="sec deldr" data-id="${r.id}" title="刪除此紀錄">🗑</button></td>`:""}</tr>`;
   }).join("");
-  el.innerHTML = `<div class="card pad0"><h2>${bs.boardDate} 當日明細 <span class="h2note">${rows.length} 人已交卷</span></h2>
-    <div class="tblwrap"><table><thead><tr><th>中心</th><th>單位</th><th>公司</th><th>工號</th><th>姓名</th><th>分數</th><th>用時</th><th>交卷</th><th>答題</th></tr></thead>
+  el.innerHTML = `<div class="card pad0"><h2>${bs.boardDate} 當日明細 <span class="h2note">${rows.length} 人已交卷${canEdit()?"　·　🗑 可刪除填錯者的紀錄，刪後可重新作答":""}</span></h2>
+    <div class="tblwrap"><table><thead><tr><th>中心</th><th>單位</th><th>公司</th><th>工號</th><th>姓名</th><th>分數</th><th>用時</th><th>交卷</th><th>答題</th>${canEdit()?"<th></th>":""}</tr></thead>
     <tbody>${body}</tbody></table></div></div>`;
+  el.querySelectorAll(".deldr").forEach(b=>b.onclick=()=>delRecord(b.dataset.id, ()=>draw()));
 }
 
 // ---- 人員成績表（跨日彙總）----
@@ -540,19 +603,23 @@ function openPerson(name){
       <div class="ms1">答錯題數 <b style="color:var(--warn)">${qWrong}</b></div>
       <div class="ms1">答對率 <b>${pct(qTotal?(qTotal-qWrong)/qTotal:0)}</b></div>
     </div><div class="mbody"><div class="tblwrap"><table><thead><tr>
-      <th>日期</th><th>結果</th><th class="num">用時</th><th>逐題（工種／作答→正解）</th></tr></thead><tbody>`;
+      <th>日期</th><th>中心/單位</th><th>結果</th><th class="num">用時</th><th>逐題（工種／作答→正解）</th>${canEdit()?"<th></th>":""}</tr></thead><tbody>`;
   for(const r of recs){
     const badge = r.passed?'<span class="pill ok">全對通過</span>':'<span class="pill warn">'+r.score+'/'+r.total+' 未過</span>';
     const detail = (r.answers||[]).map(a=>`<div class="ans"><span class="${a.ok?'r':'w'}">${a.ok?'✔':'✘'}</span> <span class="job">${esc(a.job_type)}</span>${esc(a.question||"")}<br>
       作答：<span class="${a.ok?'o':'x'}">${esc(a.chosen||'（未答）')}</span>${a.ok?'':`　正解：<span class="o">${esc(a.correct)}</span>`}</div>`).join("");
-    b += `<tr><td style="font-weight:700">${esc(r.test_date)}</td><td>${badge}</td>
+    b += `<tr><td style="font-weight:700">${esc(r.test_date)}</td>
+      <td class="muted" style="font-size:12px">${esc(r.center||'')}${r.unit?'<br>'+esc(r.unit):''}</td><td>${badge}</td>
       <td class="num">${r.duration_sec!=null?r.duration_sec+'s':'—'}</td>
-      <td style="white-space:normal;min-width:280px">${detail}</td></tr>`;
+      <td style="white-space:normal;min-width:260px">${detail}</td>
+      ${canEdit()?`<td><button class="sec deldr" data-id="${r.id}" title="刪除此紀錄">🗑</button></td>`:""}</tr>`;
   }
   b += `</tbody></table></div></div>`;
   document.getElementById("mbox").innerHTML = b;
   document.getElementById("modal").classList.remove("hide");
   document.getElementById("mclose").onclick = closePerson;
+  document.querySelectorAll("#mbox .deldr").forEach(bt=>bt.onclick=()=>delRecord(bt.dataset.id, ()=>{
+    if(RESULTS.some(r=>r.name===name)) openPerson(name); else closePerson(); draw(); }));
 }
 function closePerson(){ document.getElementById("modal").classList.add("hide"); }
 document.getElementById("modal").onclick = e => { if(e.target.id==="modal") closePerson(); };
@@ -630,13 +697,15 @@ async function loadExt(){
     msg(g.ok?`✅ 已為工號 ${emp} 延後至 ${fmtTime(g.deadline)}`:("❌ "+(g.reason||"失敗")), g.ok); loadExt();
   };
   function msg(t,ok){ document.getElementById("gmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+  document.getElementById("ex").insertAdjacentHTML("afterbegin", lockNote());
+  applyLock();
 }
 
 /* ==========================================================
    題庫管理（原樣）
    ========================================================== */
 async function renderBank(){
-  view.innerHTML = `
+  view.innerHTML = `${lockNote()}
   <div class="card">
     <b>➕ 新增題目</b>
     <div class="row" style="margin-top:10px">
@@ -730,13 +799,14 @@ async function loadBankList(){
     };
   });
   function bmsg(t,ok){ document.getElementById("bmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+  applyLock();
 }
 
 /* ==========================================================
    中心管理（原樣）
    ========================================================== */
 async function renderCenter(){
-  view.innerHTML = `<div class="card">
+  view.innerHTML = `${lockNote()}<div class="card">
     <div class="row"><input id="cn" placeholder="轉運中心名稱（例：楊梅轉運中心）" style="width:260px">
       <input id="cs" type="number" placeholder="排序" value="100" style="width:90px">
       <button class="act" id="add">新增／更新</button></div>
@@ -764,10 +834,62 @@ async function loadCenters(){
     b.onclick = async ()=>{ if(!confirm(`停用「${b.dataset.n}」？`))return;
       await api("center_upsert", { body:{ name:b.dataset.n, active:false } }); loadCenters(); };
   });
+  applyLock();
 }
 
-if(!K){ view.innerHTML = `<div class="card"><div class="msg warn">缺少管理連結參數（?k=…）。</div></div>`; }
-else renderBoard();
+/* ==========================================================
+   權限管理（僅最高權限陳尚福 26516）
+   ========================================================== */
+async function renderPerm(){
+  if(!ME.is_super){ view.innerHTML=`<div class="card"><div class="msg warn">僅最高權限（陳尚福 工號 26516）可管理權限。</div></div>`; return; }
+  view.innerHTML=`<div class="card">
+    <b>🔑 授權管理</b>
+    <div class="sub" style="margin:4px 0 10px">在此新增可與你一樣操作的工號（延後審核／題庫管理／中心管理／刪除答題紀錄）。停用＝保留名單但暫停權限。</div>
+    <div class="row">
+      <input id="pe" placeholder="工號（8碼/新物5碼）" style="width:200px">
+      <input id="pn" placeholder="姓名（選填）" style="width:170px">
+      <button class="act" id="padd">新增授權</button>
+    </div>
+    <div id="pmsg"></div>
+    <div id="plist">載入中…</div></div>`;
+  document.getElementById("padd").onclick=async ()=>{
+    const emp=document.getElementById("pe").value.trim(), name=document.getElementById("pn").value.trim();
+    if(!emp){ pmsg("請輸入工號",false); return; }
+    const r=await api("admin_upsert",{ body:{ emp_id:emp, name, active:true } });
+    if(r.ok){ pmsg("✅ 已授權",true); document.getElementById("pe").value=""; document.getElementById("pn").value=""; loadPerm(); }
+    else pmsg("❌ "+({bad_emp:"工號格式不符",is_super:"這是最高權限本人，無需加入"}[r.reason]||"失敗"),false);
+  };
+  loadPerm();
+  function pmsg(t,ok){ document.getElementById("pmsg").innerHTML=`<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+}
+async function loadPerm(){
+  const r=await api("admin_list"); const rows=r.rows||[];
+  const body = rows.map(a=>`<tr>
+    <td><code>${esc(a.emp_id)}</code></td><td>${esc(a.name||"")}</td>
+    <td>${a.active?'<span class="pill ok">啟用</span>':'<span class="pill mut">停用</span>'}</td>
+    <td><button class="sec pt" data-e="${esc(a.emp_id)}" data-n="${esc(a.name||'')}" data-a="${a.active?0:1}">${a.active?'停用':'啟用'}</button>
+        <button class="sec pd" data-e="${esc(a.emp_id)}" data-n="${esc(a.name||'')}">移除</button></td></tr>`).join("")
+    || `<tr><td colspan="4" class="muted">尚無授權對象。你（陳尚福 26516）本來就有最高權限。</td></tr>`;
+  document.getElementById("plist").innerHTML=`<div class="tblwrap"><table>
+    <thead><tr><th>工號</th><th>姓名</th><th>狀態</th><th></th></tr></thead><tbody>${body}</tbody></table></div>
+    <div class="rank-no">最高權限：<b>陳尚福（工號 26516）</b>，固定不可移除。授權者可做：延後審核、題庫管理、中心管理、刪除答題紀錄。</div>`;
+  document.querySelectorAll("#plist .pt").forEach(b=>b.onclick=async ()=>{
+    await api("admin_upsert",{ body:{ emp_id:b.dataset.e, name:b.dataset.n, active:b.dataset.a==="1" } }); loadPerm(); });
+  document.querySelectorAll("#plist .pd").forEach(b=>b.onclick=async ()=>{
+    if(!confirm(`移除工號 ${b.dataset.e}${b.dataset.n?"（"+b.dataset.n+"）":""} 的權限？`)) return;
+    await api("admin_delete",{ body:{ emp_id:b.dataset.e } }); loadPerm(); });
+}
+// ---- 刪除答題紀錄 ----
+async function delRecord(id, after){
+  if(!canEdit()){ alert("你沒有刪除權限。"); return; }
+  if(!confirm("確定刪除這筆答題紀錄？刪除後該員可重新登入作答（用於更正填錯的單位／工號／姓名）。")) return;
+  const r = await api("result_delete", { body:{ id:+id } });
+  if(!r.ok){ alert("刪除失敗"+(r.error?"："+r.error:"")); return; }
+  RANGE_LOADED=false; await loadRange(); if(after) after();
+}
+
+if(!K){ view.innerHTML = `<div class="card"><div class="msg warn">缺少管理連結參數（?k=…）。</div></div>`; hideChrome(); }
+else boot();
 </script>
 </body>
 </html>
