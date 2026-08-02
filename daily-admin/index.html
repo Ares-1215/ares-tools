@@ -244,10 +244,10 @@ function afterLogin(){ showChrome(); curTab="board";
 function renderLogin(){
   hideChrome();
   view.innerHTML = `<div class="card" style="max-width:380px;margin:36px auto">
-    <b style="font-size:17px">🔐 承辦看板登入</b>
+    <b style="font-size:17px">🔐 管理人員承辦看板登入</b>
     <div class="sub" style="margin:4px 0 12px">請輸入工號與密碼</div>
     <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px">工號</label>
-    <input id="li_emp" inputmode="numeric" placeholder="工號（8碼/新物5碼）" style="width:100%;margin-bottom:10px">
+    <input id="li_emp" inputmode="numeric" placeholder="工號" style="width:100%;margin-bottom:10px">
     <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px">密碼</label>
     <input id="li_pwd" type="password" placeholder="密碼（預設為工號）" style="width:100%;margin-bottom:12px">
     <button class="act" id="li_go" style="width:100%">登入</button>
