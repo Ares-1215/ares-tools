@@ -698,8 +698,14 @@ function exportCsv(){
 async function renderExt(){ view.innerHTML = `<div class="card"><div id="ex">載入中…</div></div>`; loadExt(); }
 async function loadExt(){
   const date = todayStr();
-  const r = await api("pending", { query:`date=${date}` });
-  const dls = (r.deadlines||[]);
+  const [r, cr] = await Promise.all([api("pending", { query:`date=${date}` }), api("centers")]);
+  // 依中心地理順序（北→南，取自 daily_centers.sort）＋單位（發送→到著）排序
+  const corder = {}; (cr.centers||[]).forEach((c,i)=> corder[c]=i);
+  const urank = u => u==="發送單位"?0 : u==="到著單位"?1 : 2;
+  const dls = (r.deadlines||[]).slice().sort((a,b)=>{
+    const ca=corder[a.center]??999, cb=corder[b.center]??999;
+    return ca!==cb ? ca-cb : urank(a.unit)-urank(b.unit);
+  });
   const dlRows = dls.map(d=> d.enabled===false
     ? `<tr><td>${esc(d.center)}</td><td>${esc(d.unit)}</td>
        <td class="muted">未啟用</td>
