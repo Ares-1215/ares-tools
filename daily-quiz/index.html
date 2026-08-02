@@ -124,6 +124,7 @@ function renderLogin(){
       <option value="發送單位">發送單位</option>
       <option value="到著單位">到著單位</option>
     </select>
+    <div id="dlHint" class="hint" style="display:none;margin-top:8px"></div>
     <label>工號</label>
     <input id="emp" inputmode="numeric" placeholder="請輸入工號" value="${esc(savedEmp())}" autocomplete="off">
     <div class="hint">外包工號為 <b>8 碼</b>。（有根人力公司→工號 <b>10</b> 開頭、丞閎人力公司→工號 <b>20</b> 開頭、信林人力公司→工號 <b>30</b> 開頭）＋身分證字號後 6 碼。<br>新竹物流員工可只輸入 <b>5 碼</b>，系統會自動在前面補 0。</div>
@@ -134,9 +135,28 @@ function renderLogin(){
   </div>`;
   loadCenters(document.getElementById("center")).then(()=>{
     const c = localStorage.getItem("daily_center"); if(c) document.getElementById("center").value = c;
+    updateDeadlineHint();
   });
   const u = localStorage.getItem("daily_unit"); if(u) document.getElementById("unit").value = u;
+  document.getElementById("center").onchange = updateDeadlineHint;
+  document.getElementById("unit").onchange = updateDeadlineHint;
   document.getElementById("go").onclick = doLogin;
+}
+
+// 選完中心＋單位即查詢並提示當日作答截止時間
+async function updateDeadlineHint(){
+  const box = document.getElementById("dlHint"); if(!box) return;
+  const center = document.getElementById("center").value.trim();
+  const unit = document.getElementById("unit").value.trim();
+  if(!center || !unit){ box.style.display="none"; return; }
+  box.style.display="block"; box.textContent = "查詢截止時間中…";
+  const r = await api("deadline_of", { body:{ center, unit } });
+  if(r && r.deadline){
+    const dt = fmtDeadline(r.deadline);
+    box.innerHTML = r.past
+      ? `⛔ <b>${esc(unit)}</b> 今日作答時間已截止（${dt}）。如需補測請聯繫陳尚福（工號 26516）核准延後。`
+      : `⏰ <b>${esc(unit)}</b> 作答截止時間：<b>${dt}</b>（${r.day_offset?"隔日":"當日"} ${esc(r.hhmm)}）`;
+  } else { box.style.display="none"; }
 }
 
 async function doLogin(){
