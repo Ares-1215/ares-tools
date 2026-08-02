@@ -810,7 +810,6 @@ async function loadBankList(){
 async function renderCenter(){
   view.innerHTML = `${lockNote()}<div class="card">
     <div class="row"><input id="cn" placeholder="轉運中心名稱（例：楊梅轉運中心）" style="width:260px">
-      <input id="cs" type="number" placeholder="排序" value="100" style="width:90px">
       <button class="act" id="add">新增／更新</button></div>
     <div id="cmsg"></div>
     <div class="msg" style="background:var(--chip)">登入頁下拉會顯示這裡「啟用」的中心。取消勾選＝停用（不刪除紀錄）。</div>
@@ -821,9 +820,8 @@ async function renderCenter(){
     <div id="dlmsg"></div><div id="dllist">載入中…</div></div>`;
   document.getElementById("add").onclick = async ()=>{
     const name = document.getElementById("cn").value.trim();
-    const sort = +document.getElementById("cs").value || 100;
     if(!name){ cmsg("請輸入名稱",false); return; }
-    const g = await api("center_upsert", { body:{ name, sort, active:true } });
+    const g = await api("center_upsert", { body:{ name, active:true } });
     cmsg(g.ok?"✅ 已儲存":"❌ 失敗", g.ok); loadCenters();
   };
   loadCenters();
