@@ -20,7 +20,9 @@
     font-family:"Segoe UI",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;line-height:1.55}
   .wrap{max-width:1400px;margin:0 auto;padding:16px 16px 60px}
   header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  h1{font-size:20px;margin:0 0 2px;font-weight:800}
+  h1{margin:0 0 2px;line-height:1.22}
+  h1 .brand{display:block;font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.4px;margin-bottom:3px}
+  h1 .ttl{display:block;font-size:20px;font-weight:800;text-wrap:balance}
   .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
   .toolbtns{display:flex;gap:8px;flex-wrap:wrap}
   .theme-btn{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:9px;padding:7px 10px;cursor:pointer;font-size:13px}
@@ -113,7 +115,8 @@
   /* ── 手機版排版（≤640px）：分頁、工具列、分段切換、篩選器改為整齊成列 ── */
   @media (max-width:640px){
     .wrap{padding:14px 12px 48px}
-    h1{font-size:17px}
+    h1 .ttl{font-size:16px}
+    h1 .brand{font-size:11.5px}
     .sub{font-size:12.5px}
     .toolbtns{width:100%}
     .toolbtns .theme-btn{flex:1 1 auto;text-align:center}
@@ -146,7 +149,7 @@
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>🛡️ 新竹物流 轉運中心安全教育訓練 · 每日測驗督導平台</h1>
+      <h1><span class="brand">🛡️ 新竹物流 · 轉運中心</span><span class="ttl">安全教育訓練 · 每日測驗督導平台</span></h1>
       <div class="sub">拆櫃・拉線・疊櫃 每日三題　·　成績・截止・題庫・權限一站管理</div>
     </div>
     <div class="toolbtns noprint" style="display:none">
