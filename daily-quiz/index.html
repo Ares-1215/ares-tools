@@ -99,7 +99,7 @@ async function api(action, opts={}){
   return res.json();
 }
 
-let STATE = { questions: [], answers: {}, deadline: 0, startTs: 0, emp: "", name: "", center: "", unit: "", timer: null };
+let STATE = { questions: [], answers: {}, deadline: 0, date: "", startTs: 0, emp: "", name: "", center: "", unit: "", timer: null };
 
 function fmtLeft(ms){
   if(ms<=0) return "已截止";
@@ -195,7 +195,7 @@ async function doLogin(){
   localStorage.setItem("daily_name", name);
   localStorage.setItem("daily_center", center);
   localStorage.setItem("daily_unit", unit);
-  STATE = { ...STATE, emp:r.emp_id, name, center, unit, questions:r.questions, deadline:r.deadline, answers:{}, startTs:Date.now() };
+  STATE = { ...STATE, emp:r.emp_id, name, center, unit, questions:r.questions, deadline:r.deadline, date:r.date, answers:{}, startTs:Date.now() };
   if(r.already_done){ renderDone(r.last); return; }
   if(r.past){ renderBlocked(); return; }
   renderQuiz(r.company);
@@ -248,7 +248,7 @@ async function doSubmit(){
   const btn = document.getElementById("submit"); btn.disabled = true; btn.textContent = "交卷中…";
   const answers = STATE.questions.map(q=>({ id:q.id, chosen:STATE.answers[q.id] }));
   const r = await api("submit", { body:{
-    emp_id:STATE.emp, name:STATE.name, center:STATE.center, unit:STATE.unit, device_id:deviceId(),
+    emp_id:STATE.emp, name:STATE.name, center:STATE.center, unit:STATE.unit, test_date:STATE.date, device_id:deviceId(),
     duration_sec:Math.round((Date.now()-STATE.startTs)/1000), answers } });
   clearInterval(STATE.timer);
   if(!r.ok){
