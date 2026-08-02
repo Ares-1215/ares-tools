@@ -58,7 +58,7 @@
 <div class="wrap">
   <header>
     <h1>🦺 每日安全測驗</h1>
-    <div class="sub">拆櫃 · 拉線 · 疊櫃　每日三題　限當日 19:00 前完成</div>
+    <div class="sub">拆櫃 · 拉線 · 疊櫃　每日三題　·　截止時間依單位而定</div>
   </header>
   <div id="app"><div class="card center">載入中…</div></div>
   <div class="foot">新竹物流轉運中心 · 人員教育訓練每日測驗</div>
@@ -96,6 +96,9 @@ function fmtLeft(ms){
   const m = Math.floor(ms/60000), s = Math.floor(ms%60000/1000);
   return `${m} 分 ${String(s).padStart(2,"0")} 秒`;
 }
+// deadline 為 +8 時區位移空間，直接切 ISO 即為台北時分
+function fmtDeadline(shiftMs){ const iso = new Date(shiftMs).toISOString();
+  return iso.slice(5,7)+"/"+iso.slice(8,10)+" "+iso.slice(11,16); }
 
 async function boot(){
   if(!K){ app.innerHTML = `<div class="card"><div class="msg warn">缺少測驗連結參數（?k=…），請向承辦索取正確網址。</div></div>`; return; }
@@ -177,7 +180,7 @@ function renderQuiz(company){
       <div class="qt">${i+1}. ${esc(q.question)}</div>${opts}</div>`;
   }).join("");
   app.innerHTML = `
-    <div class="bar">⏳ 距截止：<span class="cd" id="cd"></span></div>
+    <div class="bar">⏳ 距截止：<span class="cd" id="cd"></span>　<span style="color:var(--muted);font-weight:600">（${esc(STATE.unit||"")}截止 ${fmtDeadline(STATE.deadline)}）</span></div>
     <div class="card" style="padding:12px 14px">
       <div style="font-size:14px;color:var(--muted)">作答人：<b style="color:var(--ink)">${esc(STATE.name)}</b>（${esc(STATE.emp)}／${esc(company||"")}）· ${esc(STATE.center)}${STATE.unit?" · "+esc(STATE.unit):""}</div>
     </div>
@@ -249,7 +252,7 @@ function renderDone(last){
 
 function renderBlocked(){
   app.innerHTML = `<div class="card center">
-    <div class="msg warn">⛔ 已超過今日 19:00 截止時間</div>
+    <div class="msg warn">⛔ 已超過本單位今日截止時間${STATE.deadline?`（${fmtDeadline(STATE.deadline)}）`:""}</div>
     <div style="font-size:15px;margin:8px 0">如需補測，請聯繫 <b>陳尚福（工號 26516）</b> 核准延後（每次 +30 分鐘），核准後重新整理本頁即可作答。</div>
     <button class="sec" onclick="location.reload()">重新整理</button></div>`;
 }

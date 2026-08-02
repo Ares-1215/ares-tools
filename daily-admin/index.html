@@ -148,6 +148,7 @@ const pct = x => (x*100).toFixed(1)+"%";
 const d2 = s => (s||"").slice(5); // MM-DD
 const todayStr = () => new Date(Date.now()+8*3600000).toISOString().slice(0,10);
 function fmtTime(shiftMs){ return new Date(shiftMs).toISOString().slice(11,16); }
+function fmtDT(shiftMs){ const iso=new Date(shiftMs).toISOString(); return iso.slice(5,7)+"/"+iso.slice(8,10)+" "+iso.slice(11,16); }
 
 // ---- 登入 / 權限 ----
 let SESS = localStorage.getItem("dadm_sess") || "";
@@ -666,15 +667,17 @@ async function renderExt(){ view.innerHTML = `<div class="card"><div id="ex">載
 async function loadExt(){
   const date = todayStr();
   const r = await api("pending", { query:`date=${date}` });
+  const dls = (r.deadlines||[]);
+  const dlRows = dls.map(d=>`<tr><td>${esc(d.center)}</td><td>${esc(d.unit)}</td>
+    <td>${d.day_offset?'隔日':'當日'} ${esc(d.hhmm)}</td>
+    <td class="${d.past?'warn':'ok'}" style="font-weight:700">${fmtDT(d.deadline)}</td>
+    <td>${d.past?'<span class="pill warn">已截止</span>':'<span class="pill ok">開放中</span>'}</td></tr>`).join("")
+    || `<tr><td colspan="5" class="muted">尚無截止設定（預設 19:00 當日）</td></tr>`;
   const exts = (r.extensions||[]).map(e=>`<tr><td>${e.scope==='all'?'全體':'工號 '+esc(e.emp_id)}</td><td>+${e.minutes} 分</td><td>${esc(e.granted_by||'')}</td><td>${new Date(e.created_at).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}</td></tr>`).join("") || `<tr><td colspan="4" class="muted">今日尚無延後紀錄</td></tr>`;
   document.getElementById("ex").innerHTML = `
-    <div class="tiles">
-      <div class="tile"><div class="k">日期</div><div class="v" style="font-size:18px">${date}</div></div>
-      <div class="tile"><div class="k">原始截止</div><div class="v" style="font-size:18px">19:00</div></div>
-      <div class="tile"><div class="k">目前有效截止</div><div class="v ${r.past?'warn':'ok'}" style="font-size:18px">${fmtTime(r.deadline)}</div></div>
-      <div class="tile"><div class="k">狀態</div><div class="v ${r.past?'warn':'ok'}" style="font-size:18px">${r.past?'已截止':'開放中'}</div></div>
-    </div>
-    <div class="msg" style="background:var(--chip)">逾時者須經 <b>陳尚福（26516）</b> 核准延後才可補測，每次 +30 分鐘。</div>
+    ${lockNote()}
+    <div class="msg" style="background:var(--chip)">${date} 各單位截止時間如下。逾時者須經 <b>陳尚福（26516）</b> 核准延後（每次 +30 分鐘，會套用到當事人所屬單位截止時間之上）。截止時間可於「🏢 中心管理」分頁調整。</div>
+    <div class="tblwrap" style="margin-bottom:12px"><table><thead><tr><th>中心</th><th>單位</th><th>原始截止</th><th>目前有效截止</th><th>狀態</th></tr></thead><tbody>${dlRows}</tbody></table></div>
     <div class="row">
       <button class="act" id="gall">全體 +30 分</button>
       <input id="gemp" placeholder="指定工號（8碼/新物5碼）" style="width:220px">
@@ -682,22 +685,21 @@ async function loadExt(){
       <button class="sec" id="rf">🔄 重新整理</button>
     </div>
     <div id="gmsg"></div>
-    <h3 style="font-size:15px;margin:14px 0 6px">今日延後紀錄</h3>
+    <h3 style="font-size:15px;margin:14px 0 6px">今日延後紀錄${r.extra_min_all?`（全體已 +${r.extra_min_all} 分）`:""}</h3>
     <div class="tblwrap"><table><thead><tr><th>對象</th><th>延後</th><th>核准人</th><th>時間</th></tr></thead><tbody>${exts}</tbody></table></div>`;
   document.getElementById("rf").onclick = loadExt;
   document.getElementById("gall").onclick = async ()=>{
     if(!confirm("確定「全體」延後 30 分鐘？")) return;
     const g = await api("grant", { body:{ scope:"all" } });
-    msg(g.ok?`✅ 已延後，全體有效截止 ${fmtTime(g.deadline)}`:"❌ 失敗", g.ok); loadExt();
+    msg(g.ok?"✅ 已全體延後 +30 分":"❌ 失敗", g.ok); loadExt();
   };
   document.getElementById("gemp2").onclick = async ()=>{
     const emp = document.getElementById("gemp").value.trim();
     if(!emp){ msg("請輸入工號",false); return; }
     const g = await api("grant", { body:{ scope:"emp", emp_id:emp } });
-    msg(g.ok?`✅ 已為工號 ${emp} 延後至 ${fmtTime(g.deadline)}`:("❌ "+(g.reason||"失敗")), g.ok); loadExt();
+    msg(g.ok?`✅ 已為工號 ${emp} 延後 +30 分`:("❌ "+(g.reason||"失敗")), g.ok); loadExt();
   };
   function msg(t,ok){ document.getElementById("gmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
-  document.getElementById("ex").insertAdjacentHTML("afterbegin", lockNote());
   applyLock();
 }
 
@@ -812,7 +814,11 @@ async function renderCenter(){
       <button class="act" id="add">新增／更新</button></div>
     <div id="cmsg"></div>
     <div class="msg" style="background:var(--chip)">登入頁下拉會顯示這裡「啟用」的中心。取消勾選＝停用（不刪除紀錄）。</div>
-    <div id="clist">載入中…</div></div>`;
+    <div id="clist">載入中…</div></div>
+  <div class="card">
+    <b>⏰ 截止時間設定（中心 × 單位）</b>
+    <div class="sub" style="margin:4px 0 8px">各中心「發送單位／到著單位」的每日測驗截止時間。<b>當日</b>＝當天該時分；<b>隔日</b>＝跨午夜到隔天該時分（夜班用，例：到著 隔日 01:00）。未設定者預設 19:00 當日。</div>
+    <div id="dlmsg"></div><div id="dllist">載入中…</div></div>`;
   document.getElementById("add").onclick = async ()=>{
     const name = document.getElementById("cn").value.trim();
     const sort = +document.getElementById("cs").value || 100;
@@ -821,7 +827,37 @@ async function renderCenter(){
     cmsg(g.ok?"✅ 已儲存":"❌ 失敗", g.ok); loadCenters();
   };
   loadCenters();
+  loadDeadlines();
   function cmsg(t,ok){ document.getElementById("cmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+}
+async function loadDeadlines(){
+  const [cr, dr] = await Promise.all([api("centers"), api("deadline_list")]);
+  const centers = cr.centers||[]; const cfg={};
+  (dr.rows||[]).forEach(x=> cfg[x.center+"|"+x.unit]={hhmm:x.hhmm,off:x.day_offset});
+  const units=["發送單位","到著單位"];
+  let rows="";
+  for(const c of centers) for(const u of units){
+    const v=cfg[c+"|"+u]||{hhmm:"19:00",off:0};
+    rows+=`<tr data-c="${esc(c)}" data-u="${u}">
+      <td>${esc(c)}</td><td>${u}</td>
+      <td><input class="dh" value="${esc(v.hhmm)}" style="width:82px" placeholder="HH:MM"></td>
+      <td><select class="do"><option value="0" ${v.off?'':'selected'}>當日</option><option value="1" ${v.off?'selected':''}>隔日</option></select></td>
+      <td><button class="act dsv">儲存</button></td></tr>`;
+  }
+  if(!rows) rows=`<tr><td colspan="5" class="muted">請先於上方新增並啟用中心。</td></tr>`;
+  document.getElementById("dllist").innerHTML=`<div class="tblwrap"><table>
+    <thead><tr><th>中心</th><th>單位</th><th>截止時分(HH:MM)</th><th>當日/隔日</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  document.querySelectorAll("#dllist tr[data-c]").forEach(tr=>{
+    const sv=tr.querySelector(".dsv"); if(!sv) return;
+    sv.onclick=async ()=>{
+      const hhmm=tr.querySelector(".dh").value.trim(); const off=+tr.querySelector(".do").value;
+      if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm)){ dlmsg("時間格式需 HH:MM（24 小時制，例 19:00）",false); return; }
+      const g=await api("deadline_set",{ body:{ center:tr.dataset.c, unit:tr.dataset.u, hhmm, day_offset:off } });
+      dlmsg(g.ok?`✅ 已設定 ${tr.dataset.c}／${tr.dataset.u} → ${off?'隔日':'當日'} ${hhmm}`:("❌ "+({bad_time:"時間格式錯誤",empty:"缺中心/單位"}[g.reason]||"失敗")),g.ok);
+    };
+  });
+  applyLock();
+  function dlmsg(t,ok){ document.getElementById("dlmsg").innerHTML=`<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
 }
 async function loadCenters(){
   const r = await api("centers");
