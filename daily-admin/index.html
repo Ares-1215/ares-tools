@@ -103,6 +103,25 @@
   .mstat .ms1 b{color:var(--ink);font-size:15px;font-weight:800}
   .mbody{padding:8px 18px 18px}
   .hide{display:none}
+  /* ── 手機版排版（≤640px）：分頁、工具列、分段切換、篩選器改為整齊成列 ── */
+  @media (max-width:640px){
+    .wrap{padding:14px 12px 48px}
+    h1{font-size:17px}
+    .sub{font-size:12.5px}
+    .toolbtns{width:100%}
+    .toolbtns .theme-btn{flex:1 1 auto;text-align:center}
+    .tabs button{flex:1 1 auto;text-align:center;padding:9px 8px}
+    .tiles{grid-template-columns:repeat(2,1fr)}
+    .bar,.row{gap:6px}
+    .seg{display:flex;width:100%}
+    .seg button{flex:1 1 auto;text-align:center;padding:8px 6px}
+    .bar input[type=search],.row input[type=search]{flex:1 1 100%;min-width:0}
+    .bar select,.row select{flex:1 1 auto;min-width:0}
+    .row button.act,.row button.sec,.bar button.act{flex:1 1 auto}
+    .modal{padding:14px 8px}
+    .mstat{padding:10px 14px 2px}
+    .mbody{padding:6px 12px 14px}
+  }
   @media print{
     body{background:#fff}
     .wrap{max-width:none;padding:0}

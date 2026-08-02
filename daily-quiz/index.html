@@ -52,6 +52,13 @@
   .wrongq .c{color:var(--brand);font-weight:700}
   .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:20px}
   .lock{font-size:13px;color:var(--muted);margin-top:6px}
+  /* ── 手機版微調（≤480px）：收窄留白、標題不過大 ── */
+  @media (max-width:480px){
+    .wrap{padding:14px 12px 48px}
+    header h1{font-size:18px;line-height:1.4}
+    .card{padding:16px 14px}
+    button{padding:13px}
+  }
 </style>
 </head>
 <body>

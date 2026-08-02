@@ -128,6 +128,26 @@
   .spin{display:inline-block;width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:s .8s linear infinite;vertical-align:-4px;margin-right:8px}
   @keyframes s{to{transform:rotate(360deg)}}
   .hide{display:none}
+  /* ── 手機版排版（≤640px）：工具列、分段切換、篩選器改為整齊成列，避免零散換行 ── */
+  @media (max-width:640px){
+    .wrap{padding:14px 12px 48px}
+    header.top{gap:8px}
+    h1{font-size:17px}
+    .sub{font-size:12.5px}
+    .toolbtns{width:100%}
+    .toolbtns .theme-btn{flex:1 1 auto;text-align:center}
+    .tiles{grid-template-columns:repeat(2,1fr)}
+    .tile .v{font-size:22px}
+    .bar{gap:6px}
+    .seg{display:flex;width:100%}
+    .seg button{flex:1 1 auto;text-align:center;padding:8px 6px}
+    .bar input[type=search]{flex:1 1 100%;min-width:0}
+    .bar select{flex:1 1 auto;min-width:0}
+    .bar .theme-btn{flex:1 1 auto}
+    .modal{padding:14px 8px}
+    .mstat{padding:10px 14px 2px}
+    .mbody{padding:6px 12px 14px}
+  }
   /* 列印 */
   @media print{
     body{background:#fff}

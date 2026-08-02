@@ -41,6 +41,18 @@ tbody tr:hover{background:var(--chip);cursor:pointer}
 .lock .em{font-size:40px}
 .spin{text-align:center;color:var(--muted);padding:44px 0}
 .hide{display:none}
+/* ── 手機版排版（≤640px）：統計卡改雙欄、工具列與分段整齊成列 ── */
+@media (max-width:640px){
+  .wrap{padding:14px 12px 48px}
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .tile .v{font-size:21px}
+  .toolbar{gap:6px}
+  .toolbar input[type=search]{flex:1 1 100%;min-width:0}
+  .seg{display:flex;width:100%}
+  .seg button{flex:1 1 auto;text-align:center}
+  .toolbar .btn{flex:1 1 auto;text-align:center}
+  .mask{padding:16px 8px}
+}
 /* modal */
 .mask{position:fixed;inset:0;background:rgba(10,18,30,.55);display:none;align-items:flex-start;justify-content:center;padding:30px 14px;z-index:20;overflow:auto}
 .mask.show{display:flex}
