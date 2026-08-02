@@ -161,7 +161,9 @@ async function updateDeadlineHint(){
   if(!center || !unit){ box.style.display="none"; return; }
   box.style.display="block"; box.textContent = "查詢截止時間中…";
   const r = await api("deadline_of", { body:{ center, unit } });
-  if(r && r.deadline){
+  if(r && r.enabled===false){
+    box.innerHTML = `♾️ <b>${esc(unit)}</b> 目前無截止時間限制，可隨時作答。`;
+  } else if(r && r.deadline){
     const dt = fmtDeadline(r.deadline);
     box.innerHTML = r.past
       ? `⛔ <b>${esc(unit)}</b> 今日作答時間已截止（${dt}）。如需補測請聯繫陳尚福（工號 26516）核准延後。`
@@ -210,7 +212,9 @@ function renderQuiz(company){
       <div class="qt">${i+1}. ${esc(q.question)}</div>${opts}</div>`;
   }).join("");
   app.innerHTML = `
-    <div class="bar">⏳ 距截止：<span class="cd" id="cd"></span>　<span style="color:var(--muted);font-weight:600">（${esc(STATE.unit||"")}截止 ${fmtDeadline(STATE.deadline)}）</span></div>
+    <div class="bar">${STATE.deadline
+      ? `⏳ 距截止：<span class="cd" id="cd"></span>　<span style="color:var(--muted);font-weight:600">（${esc(STATE.unit||"")}截止 ${fmtDeadline(STATE.deadline)}）</span>`
+      : `♾️ <span style="font-weight:700">無截止時間限制</span>　<span style="color:var(--muted);font-weight:600">（可隨時作答）</span>`}</div>
     <div class="card" style="padding:12px 14px">
       <div style="font-size:14px;color:var(--muted)">作答人：<b style="color:var(--ink)">${esc(STATE.name)}</b>（${esc(STATE.emp)}／${esc(company||"")}）· ${esc(STATE.center)}${STATE.unit?" · "+esc(STATE.unit):""}</div>
     </div>
@@ -226,8 +230,7 @@ function renderQuiz(company){
     };
   });
   document.getElementById("submit").onclick = doSubmit;
-  tick();
-  STATE.timer = setInterval(tick, 1000);
+  if(STATE.deadline){ tick(); STATE.timer = setInterval(tick, 1000); }
 }
 
 function tick(){

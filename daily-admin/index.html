@@ -700,7 +700,12 @@ async function loadExt(){
   const date = todayStr();
   const r = await api("pending", { query:`date=${date}` });
   const dls = (r.deadlines||[]);
-  const dlRows = dls.map(d=>`<tr><td>${esc(d.center)}</td><td>${esc(d.unit)}</td>
+  const dlRows = dls.map(d=> d.enabled===false
+    ? `<tr><td>${esc(d.center)}</td><td>${esc(d.unit)}</td>
+       <td class="muted">未啟用</td>
+       <td class="muted">—</td>
+       <td><span class="pill ok">無限制</span></td></tr>`
+    : `<tr><td>${esc(d.center)}</td><td>${esc(d.unit)}</td>
     <td>${d.day_offset?'隔日':'當日'} ${esc(d.hhmm)}</td>
     <td class="${d.past?'warn':'ok'}" style="font-weight:700">${fmtDT(d.deadline)}</td>
     <td>${d.past?'<span class="pill warn">已截止</span>':'<span class="pill ok">開放中</span>'}</td></tr>`).join("")
@@ -848,7 +853,7 @@ async function renderCenter(){
     <div id="clist">載入中…</div></div>
   <div class="card">
     <b>⏰ 截止時間設定（中心 × 單位）</b>
-    <div class="sub" style="margin:4px 0 8px">各中心「發送單位／到著單位」的每日測驗截止時間。<b>當日</b>＝當天該時分；<b>隔日</b>＝跨午夜到隔天該時分（夜班用，例：到著 隔日 01:00）。未設定者預設 19:00 當日。</div>
+    <div class="sub" style="margin:4px 0 8px">各中心「發送單位／到著單位」的每日測驗截止時間。<b>當日</b>＝當天該時分；<b>隔日</b>＝跨午夜到隔天該時分（夜班用，例：到著 隔日 01:00）。未設定者預設 19:00 當日。<br><b>啟用截止</b>取消勾選＝該單位<b>無截止時間限制</b>，員工可隨時作答。</div>
     <div id="dlmsg"></div><div id="dllist">載入中…</div></div>`;
   document.getElementById("add").onclick = async ()=>{
     const name = document.getElementById("cn").value.trim();
@@ -863,27 +868,31 @@ async function renderCenter(){
 async function loadDeadlines(){
   const [cr, dr] = await Promise.all([api("centers"), api("deadline_list")]);
   const centers = cr.centers||[]; const cfg={};
-  (dr.rows||[]).forEach(x=> cfg[x.center+"|"+x.unit]={hhmm:x.hhmm,off:x.day_offset});
+  (dr.rows||[]).forEach(x=> cfg[x.center+"|"+x.unit]={hhmm:x.hhmm,off:x.day_offset,enabled:x.enabled!==false});
   const units=["發送單位","到著單位"];
   let rows="";
   for(const c of centers) for(const u of units){
-    const v=cfg[c+"|"+u]||{hhmm:"19:00",off:0};
+    const v=cfg[c+"|"+u]||{hhmm:"19:00",off:0,enabled:true};
     rows+=`<tr data-c="${esc(c)}" data-u="${u}">
       <td>${esc(c)}</td><td>${u}</td>
-      <td><input class="dh" value="${esc(v.hhmm)}" style="width:82px" placeholder="HH:MM"></td>
-      <td><select class="do"><option value="0" ${v.off?'':'selected'}>當日</option><option value="1" ${v.off?'selected':''}>隔日</option></select></td>
+      <td style="text-align:center"><input type="checkbox" class="den" ${v.enabled?'checked':''}></td>
+      <td><input class="dh" value="${esc(v.hhmm)}" style="width:82px" placeholder="HH:MM" ${v.enabled?'':'disabled'}></td>
+      <td><select class="do" ${v.enabled?'':'disabled'}><option value="0" ${v.off?'':'selected'}>當日</option><option value="1" ${v.off?'selected':''}>隔日</option></select></td>
       <td><button class="act dsv">儲存</button></td></tr>`;
   }
-  if(!rows) rows=`<tr><td colspan="5" class="muted">請先於上方新增並啟用中心。</td></tr>`;
+  if(!rows) rows=`<tr><td colspan="6" class="muted">請先於上方新增並啟用中心。</td></tr>`;
   document.getElementById("dllist").innerHTML=`<div class="tblwrap"><table>
-    <thead><tr><th>中心</th><th>單位</th><th>截止時分(HH:MM)</th><th>當日/隔日</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    <thead><tr><th>中心</th><th>單位</th><th>啟用截止</th><th>截止時分(HH:MM)</th><th>當日/隔日</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
   document.querySelectorAll("#dllist tr[data-c]").forEach(tr=>{
+    const en=tr.querySelector(".den"), dh=tr.querySelector(".dh"), dosel=tr.querySelector(".do");
+    if(en) en.onchange=()=>{ dh.disabled=!en.checked; dosel.disabled=!en.checked; };
     const sv=tr.querySelector(".dsv"); if(!sv) return;
     sv.onclick=async ()=>{
-      const hhmm=tr.querySelector(".dh").value.trim(); const off=+tr.querySelector(".do").value;
-      if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm)){ dlmsg("時間格式需 HH:MM（24 小時制，例 19:00）",false); return; }
-      const g=await api("deadline_set",{ body:{ center:tr.dataset.c, unit:tr.dataset.u, hhmm, day_offset:off } });
-      dlmsg(g.ok?`✅ 已設定 ${tr.dataset.c}／${tr.dataset.u} → ${off?'隔日':'當日'} ${hhmm}`:("❌ "+({bad_time:"時間格式錯誤",empty:"缺中心/單位"}[g.reason]||"失敗")),g.ok);
+      const enabled=en.checked;
+      const hhmm=dh.value.trim(); const off=+dosel.value;
+      if(enabled && !/^([01]\d|2[0-3]):[0-5]\d$/.test(hhmm)){ dlmsg("時間格式需 HH:MM（24 小時制，例 19:00）",false); return; }
+      const g=await api("deadline_set",{ body:{ center:tr.dataset.c, unit:tr.dataset.u, hhmm:hhmm||"19:00", day_offset:off, enabled } });
+      dlmsg(g.ok?(enabled?`✅ 已設定 ${tr.dataset.c}／${tr.dataset.u} → ${off?'隔日':'當日'} ${hhmm}`:`✅ 已設定 ${tr.dataset.c}／${tr.dataset.u} → 無截止時間限制`):("❌ "+({bad_time:"時間格式錯誤",empty:"缺中心/單位"}[g.reason]||"失敗")),g.ok);
     };
   });
   applyLock();
