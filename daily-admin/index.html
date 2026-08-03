@@ -102,6 +102,8 @@
   .cbar-x{font-size:10.5px;color:var(--muted);white-space:nowrap;transform:rotate(-45deg);transform-origin:center top;margin-top:5px}
   /* 數據分析 */
   .asel{display:flex;gap:8px;align-items:center;padding:10px 16px 2px;flex-wrap:wrap}
+  .asel .afg{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .asel .afg select{min-width:0}
   .aline{width:100%;height:auto;display:block}
   .aline .grid{stroke:var(--line);opacity:.55} .aline text{fill:var(--muted);font-size:10px}
   .gbar{display:grid;grid-template-columns:116px 1fr auto;gap:10px;align-items:center;padding:6px 16px;font-size:12.5px}
@@ -711,10 +713,11 @@ function groupBarsHTML(items){
     <span class="gv">${pct(g.rate)} <span class="gsub">${g.people}人 / ${g.n}題</span></span></div>`).join("");
 }
 function filterRowHTML(L, f, prefix){
+  const grp=(icon,sel)=>`<span class="afg">${icon}${sel}</span>`;
   return `<div class="asel">
-    <span class="muted" style="font-size:12px;font-weight:600">🚚</span>${selHTML(prefix+"Center",L.centers,f.center,"全部中心")}
-    <span class="muted" style="font-size:12px;font-weight:600">📦</span>${selHTML(prefix+"Unit",L.units,f.unit,"全部單位")}
-    <span class="muted" style="font-size:12px;font-weight:600">🏢</span>${selHTML(prefix+"Company",L.comps,f.company,"全部公司")}</div>`;
+    ${grp("🚚",selHTML(prefix+"Center",L.centers,f.center,"全部中心"))}
+    ${grp("📦",selHTML(prefix+"Unit",L.units,f.unit,"全部單位"))}
+    ${grp("🏢",selHTML(prefix+"Company",L.comps,f.company,"全部公司"))}</div>`;
 }
 function renderAnalysis(){
   const L = optLists();
