@@ -100,6 +100,24 @@
   .cbar-track>i{display:block;width:100%;border-radius:5px 5px 0 0;transition:height .3s}
   .cbar-val{font-size:10.5px;font-weight:800;color:var(--muted)}
   .cbar-x{font-size:10.5px;color:var(--muted);white-space:nowrap;transform:rotate(-45deg);transform-origin:center top;margin-top:5px}
+  /* 數據分析 */
+  .asel{display:flex;gap:8px;align-items:center;padding:10px 16px 2px;flex-wrap:wrap}
+  .aline{width:100%;height:auto;display:block}
+  .aline .grid{stroke:var(--line);opacity:.55} .aline text{fill:var(--muted);font-size:10px}
+  .gbar{display:grid;grid-template-columns:116px 1fr auto;gap:10px;align-items:center;padding:6px 16px;font-size:12.5px}
+  .gbar .gk{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .gbar .gt{height:15px;background:var(--chip);border-radius:8px;overflow:hidden}
+  .gbar .gt>i{display:block;height:100%;border-radius:8px;transition:width .4s}
+  .gbar .gv{font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .gbar .gv .gsub{color:var(--muted);font-weight:600;font-size:11px}
+  .donutwrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:16px}
+  .dleg{display:flex;flex-direction:column;gap:6px;font-size:13px}
+  .dleg .dl{display:flex;align-items:center;gap:7px}
+  .dleg .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .aband{display:flex;height:22px;border-radius:8px;overflow:hidden;margin:10px 16px 4px}
+  .aband>span{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;min-width:0}
+  .abandkey{padding:0 16px 12px;font-size:11px;color:var(--muted)}
+  .abandkey b{color:var(--ink)}
   /* Modal 個人詳情 */
   .modal{position:fixed;inset:0;background:rgba(10,18,30,.55);display:flex;align-items:flex-start;justify-content:center;padding:28px 14px;z-index:50;overflow-y:auto}
   .mbox{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.35);max-width:820px;width:100%;overflow:hidden}
@@ -281,7 +299,7 @@ let FLAT = [];      // 逐題攤平：{name,emp_id,job_type,test_date,question,c
 let DATES = [];
 let RANGE_LOADED = false;
 let bs = { view:"board", job:"全部", q:"", company:"全部", center:"全部", unit:"全部", from:"", to:"", year:"全部", month:"全部",
-  boardDate: todayStr(), sortKey:"wrongRate", sortDir:-1 };
+  boardDate: todayStr(), sortKey:"wrongRate", sortDir:-1, groupBy:"company" };
 
 async function loadRange(){
   const r = await api("results_range");
@@ -339,7 +357,7 @@ function draw(){
   const months = ["全部", ...[...new Set(DATES.filter(d=>bs.year==="全部"||d.slice(0,4)===bs.year).map(d=>d.slice(5,7)))].sort()];
   const monthOpts = months.map(m=>`<option value="${m}" ${m===bs.month?"selected":""}>${m==="全部"?"全部月":(+m)+"月"}</option>`).join("");
 
-  const views = [["board","當日明細"],["people","人員成績表"],["wrong","錯題統整"],["rank","常錯題排行"],["daily","逐日總覽"]];
+  const views = [["board","當日明細"],["analysis","📊 數據分析"],["people","人員成績表"],["wrong","錯題統整"],["rank","常錯題排行"],["daily","逐日總覽"]];
   const jobs = ["全部","拆櫃","拉線","疊櫃"];
 
   let h = `<div class="bar noprint">
@@ -380,6 +398,7 @@ function draw(){
 
   renderTiles();
   if(bs.view==="board") renderBoardDay();
+  else if(bs.view==="analysis") renderAnalysis();
   else if(bs.view==="people") renderPeople();
   else if(bs.view==="wrong") renderWrong();
   else if(bs.view==="rank") renderRank();
@@ -490,7 +509,13 @@ function personRows(){
 function sortTh(label,key,cls){ const on=bs.sortKey===key; const arr=on?(bs.sortDir===-1?" ▼":" ▲"):""; return `<th class="sortable ${cls||""}" data-sort="${key}">${label}${arr}</th>`; }
 function renderPeople(){
   const arr = personRows();
-  let h = `<div class="card pad0"><h2>人員成績資料表 <span class="h2note">${arr.length} 人</span></h2><div class="tblwrap"><table><thead><tr>
+  const band=[0,0,0]; arr.forEach(p=>{ band[p.rightRate>=0.95?0:p.rightRate>=0.8?1:2]++; });
+  const bt=arr.length||1;
+  const seg=(n,col)=> n?`<span style="background:${col};width:${(n/bt*100).toFixed(1)}%">${n}</span>`:"";
+  const bandBlock = arr.length ? `<div class="aband" title="人員答對率分布">
+      ${seg(band[0],"var(--brand2)")}${seg(band[1],"var(--accent)")}${seg(band[2],"var(--warn)")}</div>
+    <div class="abandkey">答對率分布：<span class="ok">■</span> ≥95% <b>${band[0]}</b> 人　<span style="color:var(--accent)">■</span> 80–95% <b>${band[1]}</b> 人　<span class="warn">■</span> &lt;80% <b>${band[2]}</b> 人</div>` : "";
+  let h = `<div class="card pad0"><h2>人員成績資料表 <span class="h2note">${arr.length} 人</span></h2>${bandBlock}<div class="tblwrap"><table><thead><tr>
     ${sortTh("姓名","name")}${sortTh("工號","emp_id")}<th>工種</th>
     ${sortTh("參加天數","days","num")}${sortTh("答題數","total","num")}${sortTh("答對","right","num")}
     ${sortTh("答錯","wrong","num")}${sortTh("答對率","rightRate","num")}${sortTh("未全對天","badDays","num")}</tr></thead><tbody>`;
@@ -582,8 +607,8 @@ function renderRank(){
 // ---- 逐日總覽 ----
 function dailyRate(){
   const map = new Map();
-  for(const r of flatScoped()){ let d=map.get(r.test_date); if(!d){ d={ date:r.test_date, n:0, wrong:0 }; map.set(r.test_date,d); } d.n++; if(r.is_wrong) d.wrong++; }
-  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)).map(d=>({ ...d, rate:d.n?(d.n-d.wrong)/d.n:0 }));
+  for(const r of flatScoped()){ let d=map.get(r.test_date); if(!d){ d={ date:r.test_date, n:0, wrong:0, ppl:new Set() }; map.set(r.test_date,d); } d.n++; if(r.is_wrong) d.wrong++; d.ppl.add(r.name); }
+  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)).map(d=>({ date:d.date, n:d.n, wrong:d.wrong, people:d.ppl.size, rate:d.n?(d.n-d.wrong)/d.n:0 }));
 }
 function dailyData(){
   const map = new Map();
@@ -598,11 +623,18 @@ function renderDaily(){
     const bars = rate.map(r=>{ const hgt=Math.round(r.rate*100);
       const col = r.rate>=0.95?"var(--brand2)":r.rate>=0.8?"var(--accent)":"var(--warn)";
       const mm=+r.date.slice(5,7), dd=+r.date.slice(8,10);
-      return `<div class="cbar" title="${r.date}　答對率 ${pct(r.rate)}（${r.n} 題）">
+      return `<div class="cbar" title="${r.date}　答對率 ${pct(r.rate)}（${r.n} 題 · ${r.people} 人）">
         <div class="cbar-track"><i style="height:${hgt}%;background:${col}"></i></div>
         <div class="cbar-val">${(r.rate*100).toFixed(0)}</div><div class="cbar-x">${mm}/${dd}</div></div>`;
     }).join("");
     h += `<div class="card pad0"><h2>📈 每日答對率（%）<span class="h2note">${bs.job==="全部"?"全工種合計":bs.job}　綠≥95%、藍≥80%、紅<80%</span></h2><div class="chart">${bars}</div></div>`;
+    const maxP=Math.max(1,...rate.map(r=>r.people));
+    const pbars = rate.map(r=>{ const hgt=Math.round(r.people/maxP*100); const mm=+r.date.slice(5,7), dd=+r.date.slice(8,10);
+      return `<div class="cbar" title="${r.date}　受測 ${r.people} 人（${r.n} 題）">
+        <div class="cbar-track"><i style="height:${hgt}%;background:var(--accent)"></i></div>
+        <div class="cbar-val">${r.people}</div><div class="cbar-x">${mm}/${dd}</div></div>`;
+    }).join("");
+    h += `<div class="card pad0"><h2>👥 每日受測人數<span class="h2note">${bs.job==="全部"?"全工種合計":bs.job}（去重人數）</span></h2><div class="chart">${pbars}</div></div>`;
   }
   const arr = dailyData();
   h += `<div class="card pad0"><h2>逐日成效總覽</h2><div class="tblwrap"><table><thead><tr>
@@ -614,6 +646,83 @@ function renderDaily(){
       <td class="num"><span class="rate">${pct(rt)}</span> <span class="mini"><i style="width:${(rt*100).toFixed(0)}%"></i></span></td></tr>`; }
   h += `</tbody></table></div></div>`;
   document.getElementById("body").innerHTML = h;
+}
+
+// ---- 📊 數據分析 ----
+const resultScoped = () => RESULTS.filter(r => dateOK(r) && centerOK(r) && unitOK(r) && compOK(r));
+const rateColor = x => x>=0.95?"var(--brand2)":x>=0.8?"var(--accent)":"var(--warn)";
+function analysisDaily(){
+  const map=new Map();
+  for(const r of flatScoped()){ let d=map.get(r.test_date); if(!d){ d={date:r.test_date,n:0,wrong:0,ppl:new Set()}; map.set(r.test_date,d); } d.n++; if(r.is_wrong) d.wrong++; d.ppl.add(r.name); }
+  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)).map(d=>({ date:d.date, n:d.n, wrong:d.wrong, rate:d.n?(d.n-d.wrong)/d.n:0, people:d.ppl.size }));
+}
+function groupAgg(keyFn){
+  const map=new Map();
+  for(const r of flatScoped()){ const k=keyFn(r)||"（未填）"; let g=map.get(k); if(!g){ g={key:k,n:0,wrong:0,ppl:new Set()}; map.set(k,g); } g.n++; if(r.is_wrong) g.wrong++; g.ppl.add(r.name); }
+  return [...map.values()].map(g=>({ key:g.key, n:g.n, wrong:g.wrong, rate:g.n?(g.n-g.wrong)/g.n:0, people:g.ppl.size })).sort((a,b)=>b.rate-a.rate||b.n-a.n);
+}
+// 組合圖：淡色長條=每日受測人數，折線=每日答對率(%)
+function trendSVG(days){
+  if(!days.length) return `<div class="empty">此範圍尚無資料</div>`;
+  const W=Math.max(320, days.length*46+56), H=210, padL=32, padR=14, padT=14, padB=36;
+  const iw=W-padL-padR, ih=H-padT-padB, one=days.length===1;
+  const maxP=Math.max(1, ...days.map(d=>d.people));
+  const x=i=> padL + (one? iw/2 : iw*i/(days.length-1));
+  const yR=v=> padT + ih*(1-v);
+  const bw=Math.min(28, (iw/days.length)*0.55);
+  let bars="", grid="", dots="", xl="";
+  [0,0.5,1].forEach(g=>{ const yy=yR(g); grid+=`<line class="grid" x1="${padL}" y1="${yy.toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${yy.toFixed(1)}"/><text x="${padL-6}" y="${(yy+3).toFixed(1)}" text-anchor="end">${g*100}</text>`; });
+  days.forEach((d,i)=>{ const bh=ih*(d.people/maxP); bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(padT+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,bh).toFixed(1)}" rx="3" fill="var(--chip)"><title>${d.date}　受測 ${d.people} 人　答對率 ${pct(d.rate)}</title></rect>`; });
+  const pts=days.map((d,i)=>`${x(i).toFixed(1)},${yR(d.rate).toFixed(1)}`).join(" ");
+  days.forEach((d,i)=>{ dots+=`<circle cx="${x(i).toFixed(1)}" cy="${yR(d.rate).toFixed(1)}" r="3.2" fill="var(--accent)"><title>${d.date}　答對率 ${pct(d.rate)}（${d.n} 題）</title></circle>`; });
+  const step=days.length>14?Math.ceil(days.length/14):1;
+  days.forEach((d,i)=>{ if(i%step!==0 && i!==days.length-1) return; xl+=`<text x="${x(i).toFixed(1)}" y="${(H-padB+16)}" text-anchor="middle">${d2(d.date)}</text>`; });
+  return `<svg class="aline" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMid meet" role="img">
+    ${grid}${bars}<polyline fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round" points="${pts}"/>${dots}${xl}</svg>`;
+}
+function donutSVG(pass, total){
+  const r=52, c=2*Math.PI*r, frac=total?pass/total:0, pl=(c*frac);
+  return `<svg class="donut" width="132" height="132" viewBox="0 0 132 132" role="img">
+    <circle cx="66" cy="66" r="${r}" fill="none" stroke="var(--warnbg)" stroke-width="16"/>
+    <circle cx="66" cy="66" r="${r}" fill="none" stroke="var(--brand2)" stroke-width="16" stroke-linecap="${frac>0&&frac<1?'round':'butt'}"
+      stroke-dasharray="${pl.toFixed(1)} ${(c-pl).toFixed(1)}" transform="rotate(-90 66 66)"/>
+    <text x="66" y="62" text-anchor="middle" font-size="27" font-weight="800" fill="var(--ink)">${total?Math.round(frac*100):0}%</text>
+    <text x="66" y="83" text-anchor="middle" font-size="12" fill="var(--muted)">全對通過</text></svg>`;
+}
+function groupBarsHTML(items){
+  if(!items.length) return `<div class="empty">此範圍尚無資料</div>`;
+  return items.map(g=>`<div class="gbar">
+    <span class="gk" title="${esc(g.key)}">${esc(g.key)}</span>
+    <span class="gt"><i style="width:${(g.rate*100).toFixed(0)}%;background:${rateColor(g.rate)}"></i></span>
+    <span class="gv">${pct(g.rate)} <span class="gsub">${g.people}人 / ${g.n}題</span></span></div>`).join("");
+}
+function renderAnalysis(){
+  const days = analysisDaily();
+  const groupers = { company:["🏢 人力公司", r=>companyOf(r.emp_id)], center:["🚚 中心", r=>r.center], unit:["📦 單位", r=>r.unit], job:["🏷️ 工種", r=>r.job_type] };
+  const gb = groupers[bs.groupBy] ? bs.groupBy : "company";
+  const gitems = groupAgg(groupers[gb][1]);
+  const rs = resultScoped();
+  const totalR = rs.length, passed = rs.filter(r=>r.passed).length;
+  const flat = flatScoped();
+  const people = new Set(flat.map(r=>r.name)).size;
+  const qn = flat.length, qw = flat.filter(r=>r.is_wrong).length;
+  const avgRate = qn?(qn-qw)/qn:0;
+  const gseg = Object.entries(groupers).map(([k,[lab]])=>`<button class="${gb===k?'on':''}" data-gb="${k}">${lab}</button>`).join("");
+  let h = `<div class="card pad0"><h2>📈 每日答對率 × 受測人數 <span class="h2note">${bs.job==="全部"?"全工種合計":bs.job}　▮ 受測人數　— 答對率(%)</span></h2>
+      <div style="padding:6px 8px 10px">${trendSVG(days)}</div></div>
+    <div class="card pad0"><h2>📊 群組答對率對比 <span class="h2note">由高到低排序</span></h2>
+      <div class="asel"><div class="seg" id="gbSeg">${gseg}</div></div>
+      <div style="padding:6px 0 12px">${groupBarsHTML(gitems)}</div></div>
+    <div class="card pad0"><h2>🎯 通過率總覽 <span class="h2note">以整份(3題全對)計，不受工種篩選影響</span></h2>
+      <div class="donutwrap">${donutSVG(passed,totalR)}
+        <div class="dleg">
+          <div class="dl"><span class="dot" style="background:var(--brand2)"></span>全對通過　<b>${passed}</b> 人次</div>
+          <div class="dl"><span class="dot" style="background:var(--warnbg)"></span>未全對　<b>${totalR-passed}</b> 人次</div>
+          <div class="dl" style="margin-top:6px;color:var(--muted)">總作答 ${totalR} 人次 · 受測 ${people} 人</div>
+          <div class="dl" style="color:var(--muted)">平均題級答對率 <b class="ok">${pct(avgRate)}</b></div>
+        </div></div></div>`;
+  document.getElementById("body").innerHTML = h;
+  const seg=document.getElementById("gbSeg"); if(seg) seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{ bs.groupBy=b.dataset.gb; draw(); });
 }
 
 // ---- 個人詳情 Modal ----
@@ -687,6 +796,16 @@ function exportCsv(){
     const arr = rankData(); const byJob={}; arr.forEach(m=>(byJob[m.job]||=[]).push(m));
     for(const j of Object.keys(byJob)) byJob[j].forEach((m,i)=>out.push([j,i+1,m.q,m.wrong,pct(m.pct),m.attempts,m.dates.map(d2).join("、"),m.correct]));
     download(`常錯題排行_${bs.from.slice(5)}-${bs.to.slice(5)}.csv`, out);
+  } else if(bs.view==="analysis"){
+    const out=[["每日趨勢"],["日期","受測人數","答題數","答對率"]];
+    for(const d of analysisDaily()) out.push([d.date,d.people,d.n,pct(d.rate)]);
+    const labels={company:"人力公司",center:"中心",unit:"單位",job:"工種"};
+    for(const gk of ["company","center","unit","job"]){
+      const fn={company:r=>companyOf(r.emp_id),center:r=>r.center,unit:r=>r.unit,job:r=>r.job_type}[gk];
+      out.push([],[`群組對比：${labels[gk]}`],[labels[gk],"受測人數","答題數","答對率"]);
+      for(const g of groupAgg(fn)) out.push([g.key,g.people,g.n,pct(g.rate)]);
+    }
+    download(`數據分析_${bs.from.slice(5)}-${bs.to.slice(5)}.csv`, out);
   } else {
     const out=[["日期","工種","答題","答錯","答對率"]];
     for(const d of dailyData()) out.push([d.date,d.job,d.n,d.wrong,pct(d.n?(d.n-d.wrong)/d.n:0)]);
