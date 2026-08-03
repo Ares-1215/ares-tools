@@ -509,13 +509,7 @@ function personRows(){
 function sortTh(label,key,cls){ const on=bs.sortKey===key; const arr=on?(bs.sortDir===-1?" ▼":" ▲"):""; return `<th class="sortable ${cls||""}" data-sort="${key}">${label}${arr}</th>`; }
 function renderPeople(){
   const arr = personRows();
-  const band=[0,0,0]; arr.forEach(p=>{ band[p.rightRate>=0.95?0:p.rightRate>=0.8?1:2]++; });
-  const bt=arr.length||1;
-  const seg=(n,col)=> n?`<span style="background:${col};width:${(n/bt*100).toFixed(1)}%">${n}</span>`:"";
-  const bandBlock = arr.length ? `<div class="aband" title="人員答對率分布">
-      ${seg(band[0],"var(--brand2)")}${seg(band[1],"var(--accent)")}${seg(band[2],"var(--warn)")}</div>
-    <div class="abandkey">答對率分布：<span class="ok">■</span> ≥95% <b>${band[0]}</b> 人　<span style="color:var(--accent)">■</span> 80–95% <b>${band[1]}</b> 人　<span class="warn">■</span> &lt;80% <b>${band[2]}</b> 人</div>` : "";
-  let h = `<div class="card pad0"><h2>人員成績資料表 <span class="h2note">${arr.length} 人</span></h2>${bandBlock}<div class="tblwrap"><table><thead><tr>
+  let h = `<div class="card pad0"><h2>人員成績資料表 <span class="h2note">${arr.length} 人</span></h2><div class="tblwrap"><table><thead><tr>
     ${sortTh("姓名","name")}${sortTh("工號","emp_id")}<th>工種</th>
     ${sortTh("參加天數","days","num")}${sortTh("答題數","total","num")}${sortTh("答對","right","num")}
     ${sortTh("答錯","wrong","num")}${sortTh("答對率","rightRate","num")}${sortTh("未全對天","badDays","num")}</tr></thead><tbody>`;
