@@ -467,11 +467,14 @@ function renderTiles(){
     const wrong = rows.filter(r=>r.is_wrong).length;
     const people = new Set(rows.map(r=>r.name)).size;
     const rate = rows.length ? (rows.length-wrong)/rows.length : 0;
+    const rres = RESULTS.filter(r=> dateOK(r)&&centerOK(r)&&unitOK(r)&&compOK(r));
+    const passRate = rres.length ? rres.filter(r=>r.passed).length/rres.length : 0;
     el.innerHTML = `<div class="tiles">
       <div class="tile"><div class="k">答題人次(題)</div><div class="v">${rows.length}</div></div>
       <div class="tile"><div class="k">受測人數</div><div class="v">${people} <small>人</small></div></div>
-      <div class="tile"><div class="k">答對率</div><div class="v ok">${pct(rate)}</div></div>
-      <div class="tile"><div class="k">答錯題數</div><div class="v warn">${wrong}</div></div>
+      <div class="tile"><div class="k">通過率</div><div class="v ok">${pct(passRate)}</div></div>
+      <div class="tile"><div class="k">總共題目答對率</div><div class="v ok">${pct(rate)}</div></div>
+      <div class="tile"><div class="k">總答錯題數</div><div class="v warn">${wrong}</div></div>
     </div>`;
   }
 }
