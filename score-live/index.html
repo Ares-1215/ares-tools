@@ -31,6 +31,9 @@
   .tile .v{font-size:26px;font-weight:800;margin-top:3px}
   .tile .v small{font-size:13px;color:var(--muted);font-weight:600}
   .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .fgrp{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .flbl{color:var(--muted);font-size:13px;font-weight:600;white-space:nowrap}
+  .frange{display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap}
   .seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
   .seg button{border:0;background:transparent;color:var(--muted);padding:7px 13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
   .seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
@@ -399,17 +402,15 @@ function render() {
   const compsPresent = ["全部", ...COMP_ORDER.filter(c => ALL.some(r => companyOf(r.emp_id) === c))];
   const compOpts = compsPresent.map(c => `<option value="${c}" ${c === state.company ? "selected" : ""}>${c}</option>`).join("");
   h += `<div class="bar noprint" style="margin-top:-6px">
-    <span style="color:var(--muted);font-size:13px;font-weight:600">🏢 人力公司</span>
-    <select id="compSel">${compOpts}</select>
-    ${state.company !== "全部" ? `<span style="color:var(--accent);font-size:12px;font-weight:700">僅 ${state.company}</span>` : ""}
-    <span style="color:var(--muted);font-size:13px;font-weight:600;margin-left:8px">📅 期間</span>
-    <select id="ySel">${yearOpts}</select>
-    <select id="mSel">${monthOpts}</select>
-    <select id="dFrom">${dopt(state.from)}</select>
-    <span style="color:var(--muted)">–</span>
-    <select id="dTo">${dopt(state.to)}</select>
-    <button class="theme-btn" id="dReset">全部</button>
-    ${(state.from !== DATES[0] || state.to !== DATES[DATES.length-1]) ? `<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${state.from.slice(5)}~${state.to.slice(5)}</span>` : ""}
+    <span class="fgrp"><span class="flbl">🏢 人力公司</span>
+      <select id="compSel">${compOpts}</select>
+      ${state.company !== "全部" ? `<span style="color:var(--accent);font-size:12px;font-weight:700">僅 ${state.company}</span>` : ""}</span>
+    <span class="fgrp"><span class="flbl">📅 期間</span>
+      <select id="ySel">${yearOpts}</select>
+      <select id="mSel">${monthOpts}</select>
+      <span class="frange"><select id="dFrom">${dopt(state.from)}</select><span style="color:var(--muted)">–</span><select id="dTo">${dopt(state.to)}</select></span>
+      <button class="theme-btn" id="dReset">全部</button>
+      ${(state.from !== DATES[0] || state.to !== DATES[DATES.length-1]) ? `<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${state.from.slice(5)}~${state.to.slice(5)}</span>` : ""}</span>
   </div>`;
 
   if (state.view === "people") h += renderPeople();
