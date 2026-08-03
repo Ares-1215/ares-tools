@@ -621,9 +621,25 @@ function dailyData(){
     let d=map.get(key); if(!d){ d={ date:r.test_date, job:r.job_type, n:0, wrong:0 }; map.set(key,d); } d.n++; if(r.is_wrong) d.wrong++; }
   return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)||a.job.localeCompare(b.job));
 }
+// 每日通過率（整份3題全對，result 級，不分工種；吃 中心/單位/公司/期間 篩選）
+function dailyPass(){
+  const map=new Map();
+  for(const r of RESULTS){ if(!(dateOK(r)&&centerOK(r)&&unitOK(r)&&compOK(r))) continue;
+    let d=map.get(r.test_date); if(!d){ d={date:r.test_date,total:0,pass:0}; map.set(r.test_date,d); } d.total++; if(r.passed) d.pass++; }
+  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)).map(d=>({ date:d.date, total:d.total, pass:d.pass, rate:d.total?d.pass/d.total:0 }));
+}
 function renderDaily(){
   const rate = dailyRate();
   let h = "";
+  const pass = dailyPass();
+  if(pass.length){
+    const pbars = pass.map(r=>{ const hgt=Math.round(r.rate*100); const col=rateColor(r.rate); const mm=+r.date.slice(5,7), dd=+r.date.slice(8,10);
+      return `<div class="cbar" title="${r.date}　通過率 ${pct(r.rate)}（全對 ${r.pass}/${r.total} 人）">
+        <div class="cbar-track"><i style="height:${hgt}%;background:${col}"></i></div>
+        <div class="cbar-val">${(r.rate*100).toFixed(0)}</div><div class="cbar-x">${mm}/${dd}</div></div>`;
+    }).join("");
+    h += `<div class="card pad0"><h2>🎯 每日通過率（%）<span class="h2note">全對通過 ÷ 當日作答人數（整份3題，不分工種）　綠≥95%、藍≥80%、紅<80%</span></h2><div class="chart">${pbars}</div></div>`;
+  }
   if(rate.length){
     const bars = rate.map(r=>{ const hgt=Math.round(r.rate*100);
       const col = r.rate>=0.95?"var(--brand2)":r.rate>=0.8?"var(--accent)":"var(--warn)";
