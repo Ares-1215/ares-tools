@@ -309,8 +309,16 @@ let bs = { view:"board", job:"全部", q:"", company:"全部", center:"全部", 
   gCenter:"全部", gUnit:"全部", gCompany:"全部", pCenter:"全部", pUnit:"全部", pCompany:"全部" };
 
 async function loadRange(){
-  const r = await api("results_range");
+  const [r, bt] = await Promise.all([api("results_range"), api("bank_texts")]);
   RESULTS = r.rows || [];
+  // 建立「目前題庫文字」對照，讓錯題統整/常錯題排行等顯示與題庫連動(題目改字後同步)
+  const bank = (bt && bt.rows) || [];
+  const byId = {}, byKey = {}, dupKey = {};
+  for(const q of bank){ byId[q.id]=q.question; const k=q.job_type+"|"+q.correct; if(byKey[k]!==undefined) dupKey[k]=true; else byKey[k]=q.question; }
+  const curText = (jobType, correct, id)=>{ if(id!=null && byId[id]!=null) return byId[id];
+    const k=jobType+"|"+correct; return (byKey[k]!==undefined && !dupKey[k]) ? byKey[k] : null; };
+  // 同步歷史答題紀錄的題目文字(當日明細/個人詳情也連動)
+  for(const res of RESULTS){ for(const a of (res.answers||[])){ const t=curText(a.job_type,a.correct,a.id); if(t!=null) a.question=t; } }
   FLAT = [];
   for(const res of RESULTS){
     const daypass = res.total>0 && res.score===res.total;
