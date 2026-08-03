@@ -299,7 +299,9 @@ let FLAT = [];      // 逐題攤平：{name,emp_id,job_type,test_date,question,c
 let DATES = [];
 let RANGE_LOADED = false;
 let bs = { view:"board", job:"全部", q:"", company:"全部", center:"全部", unit:"全部", from:"", to:"", year:"全部", month:"全部",
-  boardDate: todayStr(), sortKey:"wrongRate", sortDir:-1, groupBy:"company" };
+  boardDate: todayStr(), sortKey:"wrongRate", sortDir:-1,
+  // 數據分析：兩面板各自獨立的 中心/單位/公司 篩選
+  gCenter:"全部", gUnit:"全部", gCompany:"全部", pCenter:"全部", pUnit:"全部", pCompany:"全部" };
 
 async function loadRange(){
   const r = await api("results_range");
@@ -362,10 +364,18 @@ function draw(){
 
   let h = `<div class="bar noprint">
     <div class="seg" id="viewSeg">${views.map(([v,t])=>`<button class="${bs.view===v?"on":""}" data-view="${v}">${t}</button>`).join("")}</div>
-    <input type="search" id="q" placeholder="🔍 搜尋姓名或工號" value="${esc(bs.q)}">
+    ${bs.view!=="analysis"?`<input type="search" id="q" placeholder="🔍 搜尋姓名或工號" value="${esc(bs.q)}">`:""}
   </div>`;
 
-  if(bs.view==="board"){
+  if(bs.view==="analysis"){
+    h += `<div class="bar noprint">
+      <span class="muted" style="font-size:13px;font-weight:600">📅 期間</span>
+      <select id="ySel">${yearOpts}</select><select id="mSel">${monthOpts}</select>
+      <select id="dFrom">${dopt(bs.from)}</select><span class="muted">–</span><select id="dTo">${dopt(bs.to)}</select>
+      <button class="sec" id="dReset">全部</button>
+      <button class="sec rf" id="rf"><svg class="rfi" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>重新整理</button>
+      ${(bs.from!==DATES[0]||bs.to!==DATES[DATES.length-1])?`<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${bs.from.slice(5)}~${bs.to.slice(5)}</span>`:""}</div>`;
+  } else if(bs.view==="board"){
     bs.boardDate = todayStr();
     h += `<div class="bar noprint">
       <span class="muted" style="font-size:13px;font-weight:600">📅 今日 ${bs.boardDate}</span>
@@ -440,6 +450,7 @@ function bindBar(){
 // ---- Tiles ----
 function renderTiles(){
   const el = document.getElementById("tiles");
+  if(bs.view==="analysis"){ el.innerHTML=""; return; }
   if(bs.view==="board"){
     const rows = boardRows();
     const passed = rows.filter(r=>r.passed).length;
@@ -643,17 +654,26 @@ function renderDaily(){
 }
 
 // ---- 📊 數據分析 ----
-const resultScoped = () => RESULTS.filter(r => dateOK(r) && centerOK(r) && unitOK(r) && compOK(r));
 const rateColor = x => x>=0.95?"var(--brand2)":x>=0.8?"var(--accent)":"var(--warn)";
-function analysisDaily(){
-  const map=new Map();
-  for(const r of flatScoped()){ let d=map.get(r.test_date); if(!d){ d={date:r.test_date,n:0,wrong:0,ppl:new Set()}; map.set(r.test_date,d); } d.n++; if(r.is_wrong) d.wrong++; d.ppl.add(r.name); }
-  return [...map.values()].sort((a,b)=>a.date.localeCompare(b.date)).map(d=>({ date:d.date, n:d.n, wrong:d.wrong, rate:d.n?(d.n-d.wrong)/d.n:0, people:d.ppl.size }));
+// 各面板獨立的 中心/單位/公司 篩選（僅吃期間 + 該面板下拉，不受最上方全域篩選影響）
+function scopeFlat(f){ return FLAT.filter(r => dateOK(r)
+  && (f.center==="全部"||(r.center||"")===f.center) && (f.unit==="全部"||(r.unit||"")===f.unit) && (f.company==="全部"||companyOf(r.emp_id)===f.company)); }
+function scopeResults(f){ return RESULTS.filter(r => dateOK(r)
+  && (f.center==="全部"||(r.center||"")===f.center) && (f.unit==="全部"||(r.unit||"")===f.unit) && (f.company==="全部"||companyOf(r.emp_id)===f.company)); }
+function jobAgg(rows){
+  const order=["拆櫃","拉線","疊櫃"], map=new Map();
+  for(const r of rows){ let g=map.get(r.job_type); if(!g){ g={key:r.job_type,n:0,wrong:0,ppl:new Set()}; map.set(r.job_type,g); } g.n++; if(r.is_wrong) g.wrong++; g.ppl.add(r.name); }
+  return order.filter(j=>map.has(j)).map(j=>{ const g=map.get(j); return { key:j, n:g.n, wrong:g.wrong, rate:g.n?(g.n-g.wrong)/g.n:0, people:g.ppl.size }; });
 }
-function groupAgg(keyFn){
-  const map=new Map();
-  for(const r of flatScoped()){ const k=keyFn(r)||"（未填）"; let g=map.get(k); if(!g){ g={key:k,n:0,wrong:0,ppl:new Set()}; map.set(k,g); } g.n++; if(r.is_wrong) g.wrong++; g.ppl.add(r.name); }
-  return [...map.values()].map(g=>({ key:g.key, n:g.n, wrong:g.wrong, rate:g.n?(g.n-g.wrong)/g.n:0, people:g.ppl.size })).sort((a,b)=>b.rate-a.rate||b.n-a.n);
+function optLists(){
+  const centers=["全部", ...[...new Set(RESULTS.map(r=>r.center).filter(Boolean))].sort()];
+  const UO=["發送單位","到著單位"];
+  const units=["全部", ...UO.filter(u=>RESULTS.some(r=>r.unit===u)), ...[...new Set(RESULTS.map(r=>r.unit).filter(u=>u&&!UO.includes(u)))].sort()];
+  const comps=["全部", ...COMP_ORDER.filter(c=>RESULTS.some(r=>companyOf(r.emp_id)===c))];
+  return { centers, units, comps };
+}
+function selHTML(id, opts, val, labelAll){
+  return `<select id="${id}">`+opts.map(o=>`<option value="${esc(o)}" ${o===val?"selected":""}>${o==="全部"?labelAll:esc(o)}</option>`).join("")+`</select>`;
 }
 function donutSVG(pass, total){
   const r=52, c=2*Math.PI*r, frac=total?pass/total:0, pl=(c*frac);
@@ -671,30 +691,42 @@ function groupBarsHTML(items){
     <span class="gt"><i style="width:${(g.rate*100).toFixed(0)}%;background:${rateColor(g.rate)}"></i></span>
     <span class="gv">${pct(g.rate)} <span class="gsub">${g.people}人 / ${g.n}題</span></span></div>`).join("");
 }
+function filterRowHTML(L, f, prefix){
+  return `<div class="asel">
+    <span class="muted" style="font-size:12px;font-weight:600">🚚</span>${selHTML(prefix+"Center",L.centers,f.center,"全部中心")}
+    <span class="muted" style="font-size:12px;font-weight:600">📦</span>${selHTML(prefix+"Unit",L.units,f.unit,"全部單位")}
+    <span class="muted" style="font-size:12px;font-weight:600">🏢</span>${selHTML(prefix+"Company",L.comps,f.company,"全部公司")}</div>`;
+}
 function renderAnalysis(){
-  const groupers = { company:["🏢 人力公司", r=>companyOf(r.emp_id)], center:["🚚 中心", r=>r.center], unit:["📦 單位", r=>r.unit], job:["🏷️ 工種", r=>r.job_type] };
-  const gb = groupers[bs.groupBy] ? bs.groupBy : "company";
-  const gitems = groupAgg(groupers[gb][1]);
-  const rs = resultScoped();
-  const totalR = rs.length, passed = rs.filter(r=>r.passed).length;
-  const flat = flatScoped();
-  const people = new Set(flat.map(r=>r.name)).size;
-  const qn = flat.length, qw = flat.filter(r=>r.is_wrong).length;
-  const avgRate = qn?(qn-qw)/qn:0;
-  const gseg = Object.entries(groupers).map(([k,[lab]])=>`<button class="${gb===k?'on':''}" data-gb="${k}">${lab}</button>`).join("");
-  let h = `<div class="card pad0"><h2>📊 群組答對率對比 <span class="h2note">由高到低排序</span></h2>
-      <div class="asel"><div class="seg" id="gbSeg">${gseg}</div></div>
-      <div style="padding:6px 0 12px">${groupBarsHTML(gitems)}</div></div>
-    <div class="card pad0"><h2>🎯 通過率總覽 <span class="h2note">以整份(3題全對)計，不受工種篩選影響</span></h2>
+  const L = optLists();
+  // 值若已不在清單(資料變動)則退回全部
+  const fix=(v,list)=> list.includes(v)?v:"全部";
+  bs.pCenter=fix(bs.pCenter,L.centers); bs.pUnit=fix(bs.pUnit,L.units); bs.pCompany=fix(bs.pCompany,L.comps);
+  bs.gCenter=fix(bs.gCenter,L.centers); bs.gUnit=fix(bs.gUnit,L.units); bs.gCompany=fix(bs.gCompany,L.comps);
+  const pf={center:bs.pCenter,unit:bs.pUnit,company:bs.pCompany};
+  const gf={center:bs.gCenter,unit:bs.gUnit,company:bs.gCompany};
+  // 🎯 通過率總覽
+  const rs=scopeResults(pf), totalR=rs.length, passed=rs.filter(r=>r.passed).length;
+  const pflat=scopeFlat(pf), pQn=pflat.length, pQw=pflat.filter(r=>r.is_wrong).length;
+  const pPeople=new Set(pflat.map(r=>r.name)).size, pAvg=pQn?(pQn-pQw)/pQn:0;
+  // 📊 各工種答對率對比
+  const jobs=jobAgg(scopeFlat(gf));
+  let h = `<div class="card pad0"><h2>🎯 通過率總覽 <span class="h2note">以整份(3題全對)計</span></h2>
+      ${filterRowHTML(L,pf,"pSel")}
       <div class="donutwrap">${donutSVG(passed,totalR)}
         <div class="dleg">
           <div class="dl"><span class="dot" style="background:var(--brand2)"></span>全對通過　<b>${passed}</b> 人次</div>
           <div class="dl"><span class="dot" style="background:var(--warnbg)"></span>未全對　<b>${totalR-passed}</b> 人次</div>
-          <div class="dl" style="margin-top:6px;color:var(--muted)">總作答 ${totalR} 人次 · 受測 ${people} 人</div>
-          <div class="dl" style="color:var(--muted)">平均題級答對率 <b class="ok">${pct(avgRate)}</b></div>
-        </div></div></div>`;
+          <div class="dl" style="margin-top:6px;color:var(--muted)">總作答 ${totalR} 人次 · 受測 ${pPeople} 人</div>
+          <div class="dl" style="color:var(--muted)">平均題級答對率 <b class="ok">${pct(pAvg)}</b></div>
+        </div></div></div>
+    <div class="card pad0"><h2>📊 各工種答對率對比 <span class="h2note">依所選範圍，分 拆／拉／疊</span></h2>
+      ${filterRowHTML(L,gf,"gSel")}
+      <div style="padding:6px 0 12px">${groupBarsHTML(jobs)}</div></div>`;
   document.getElementById("body").innerHTML = h;
-  const seg=document.getElementById("gbSeg"); if(seg) seg.querySelectorAll("button").forEach(b=>b.onclick=()=>{ bs.groupBy=b.dataset.gb; draw(); });
+  const bind=(id,key)=>{ const e=document.getElementById(id); if(e) e.onchange=()=>{ bs[key]=e.value; draw(); }; };
+  bind("pSelCenter","pCenter"); bind("pSelUnit","pUnit"); bind("pSelCompany","pCompany");
+  bind("gSelCenter","gCenter"); bind("gSelUnit","gUnit"); bind("gSelCompany","gCompany");
 }
 
 // ---- 個人詳情 Modal ----
@@ -769,14 +801,16 @@ function exportCsv(){
     for(const j of Object.keys(byJob)) byJob[j].forEach((m,i)=>out.push([j,i+1,m.q,m.wrong,pct(m.pct),m.attempts,m.dates.map(d2).join("、"),m.correct]));
     download(`常錯題排行_${bs.from.slice(5)}-${bs.to.slice(5)}.csv`, out);
   } else if(bs.view==="analysis"){
-    const out=[["每日趨勢"],["日期","受測人數","答題數","答對率"]];
-    for(const d of analysisDaily()) out.push([d.date,d.people,d.n,pct(d.rate)]);
-    const labels={company:"人力公司",center:"中心",unit:"單位",job:"工種"};
-    for(const gk of ["company","center","unit","job"]){
-      const fn={company:r=>companyOf(r.emp_id),center:r=>r.center,unit:r=>r.unit,job:r=>r.job_type}[gk];
-      out.push([],[`群組對比：${labels[gk]}`],[labels[gk],"受測人數","答題數","答對率"]);
-      for(const g of groupAgg(fn)) out.push([g.key,g.people,g.n,pct(g.rate)]);
-    }
+    const pf={center:bs.pCenter,unit:bs.pUnit,company:bs.pCompany};
+    const gf={center:bs.gCenter,unit:bs.gUnit,company:bs.gCompany};
+    const rs=scopeResults(pf), passed=rs.filter(r=>r.passed).length;
+    const out=[[`通過率總覽（中心：${bs.pCenter}／單位：${bs.pUnit}／公司：${bs.pCompany}）`],
+      ["總作答人次","全對通過","未全對","通過率"],
+      [rs.length,passed,rs.length-passed,pct(rs.length?passed/rs.length:0)],
+      [],
+      [`各工種答對率對比（中心：${bs.gCenter}／單位：${bs.gUnit}／公司：${bs.gCompany}）`],
+      ["工種","受測人數","答題數","答對率"]];
+    for(const g of jobAgg(scopeFlat(gf))) out.push([g.key,g.people,g.n,pct(g.rate)]);
     download(`數據分析_${bs.from.slice(5)}-${bs.to.slice(5)}.csv`, out);
   } else {
     const out=[["日期","工種","答題","答錯","答對率"]];
