@@ -1081,7 +1081,11 @@ async function renderPerm(){
       <button class="act" id="padd">新增授權</button>
     </div>
     <div id="pmsg"></div>
-    <div id="plist">載入中…</div></div>`;
+    <div id="plist">載入中…</div></div>
+  <div class="card">
+    <b>🕵️ 承辦看板登入紀錄</b>
+    <div class="sub" style="margin:4px 0 10px">誰在什麼時候登入本督導平台（<b>僅你（最高權限）可見</b>；授權他人也只是管理員身分，看不到此表）。顯示最近 300 筆。</div>
+    <div id="loginlog">載入中…</div></div>`;
   document.getElementById("padd").onclick=async ()=>{
     const emp=document.getElementById("pe").value.trim(), name=document.getElementById("pn").value.trim();
     if(!emp){ pmsg("請輸入工號",false); return; }
@@ -1090,7 +1094,21 @@ async function renderPerm(){
     else pmsg("❌ "+({bad_emp:"工號格式不符",is_super:"這是最高權限本人，無需加入"}[r.reason]||"失敗"),false);
   };
   loadPerm();
+  loadLogins();
   function pmsg(t,ok){ document.getElementById("pmsg").innerHTML=`<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }
+}
+async function loadLogins(){
+  const r=await api("admin_logins"); const rows=r.rows||[];
+  const fmt=x=>{ try{ return new Date(x).toLocaleString("zh-TW",{timeZone:"Asia/Taipei",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}); }catch(_){ return esc(x); } };
+  const body=rows.map(a=>`<tr title="${esc(a.ua||"")}">
+    <td style="font-weight:700">${fmt(a.created_at)}</td>
+    <td><code>${esc(a.emp_id)}</code></td>
+    <td>${esc(a.name||"")}</td>
+    <td>${a.is_super?'<span class="pill ok">最高權限</span>':'<span class="pill mut">管理員</span>'}</td></tr>`).join("")
+    || `<tr><td colspan="4" class="muted">尚無登入紀錄。</td></tr>`;
+  const el=document.getElementById("loginlog"); if(!el) return;
+  el.innerHTML=`<div class="tblwrap"><table>
+    <thead><tr><th>登入時間（台北）</th><th>工號</th><th>姓名</th><th>身分</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 async function loadPerm(){
   const r=await api("admin_list"); const rows=r.rows||[];
