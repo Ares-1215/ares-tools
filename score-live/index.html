@@ -380,7 +380,7 @@ function render() {
     <div class="seg" id="jobSeg">${jobs.map(j => `<button class="${state.job === j ? "on" : ""}" data-job="${j}">${j}</button>`).join("")}</div>
     <div class="seg" id="viewSeg">
       <button class="${state.view === "people" ? "on" : ""}" data-view="people">人員成績表</button>
-      ${hasLihuo ? `<button class="${state.view === "lihuo" ? "on" : ""}" data-view="lihuo">理貨成績（8月）</button>` : ""}
+      ${hasLihuo ? `<button class="${state.view === "lihuo" ? "on" : ""}" data-view="lihuo">理貨成績（8月開始實施）</button>` : ""}
       <button class="${state.view === "wrong" ? "on" : ""}" data-view="wrong">錯題統整</button>
       <button class="${state.view === "rank" ? "on" : ""}" data-view="rank">常錯題排行</button>
       <button class="${state.view === "retest" ? "on" : ""}" data-view="retest">複測追蹤</button>
