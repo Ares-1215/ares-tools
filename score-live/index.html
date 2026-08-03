@@ -527,13 +527,26 @@ function renderWrong() {
   return h;
 }
 
+const LIHUO_QT = { 1: "小型轎車輪胎直徑54cm，該如何處理？", 2: "貨櫃內有空棧板，應反應現場主管並清空", 3: "跨越輸送帶，請利用有安裝黃色跨越板處跨越" };
 function rankData() {
   const map = new Map();
   const noq = {}; // 無題幹（是非題未抓到題幹）的答錯數，依工種
+  const lcorrect = {}; // 理貨每題正解（由答對者反推，免寫死）
   for (const r of ALL) {
     if (!jobOK(r)) continue;
     if (!companyOK(r)) continue;
     if (!dateOK(r)) continue;
+    if (r.job_type === "理貨") {   // 8月合併三題：展開 answers 逐題統計
+      const ans = Array.isArray(r.answers) ? r.answers : [];
+      for (const a of ans) {
+        if (!a.w && a.c && lcorrect[a.n] == null) lcorrect[a.n] = a.c;
+        const key = "理貨|" + a.n;
+        let m = map.get(key);
+        if (!m) { m = { job: "理貨", q: LIHUO_QT[a.n] || ("Q" + a.n), qn: a.n, attempts: 0, wrong: 0, correct: "", dates: new Set() }; map.set(key, m); }
+        m.attempts++; if (a.w) m.wrong++; m.dates.add(r.test_date);
+      }
+      continue;
+    }
     if (!r.question) { if (r.is_wrong) noq[r.job_type] = (noq[r.job_type] || 0) + 1; continue; }
     const key = r.job_type + "" + r.question;
     let m = map.get(key);
@@ -541,6 +554,7 @@ function rankData() {
     m.attempts++; if (r.is_wrong) m.wrong++; m.dates.add(r.test_date);
     if (!m.correct && r.correct_option) m.correct = r.correct_option;
   }
+  for (const m of map.values()) if (m.job === "理貨" && !m.correct && lcorrect[m.qn]) m.correct = lcorrect[m.qn];
   let arr = [...map.values()].map(m => ({ ...m, pct: m.attempts ? m.wrong / m.attempts : 0, dates: [...m.dates].sort() }))
     .filter(m => m.wrong > 0)
     .sort((a, b) => b.wrong - a.wrong || b.pct - a.pct || a.job.localeCompare(b.job));
@@ -573,7 +587,8 @@ function renderRank() {
   };
   let h = "";
   if (state.job === "全部") {
-    for (const j of ["拆櫃", "拉線", "疊櫃"]) {
+    const present = ["拆櫃", "拉線", "疊櫃", "理貨"].filter(j => ALL.some(r => r.job_type === j && dateOK(r) && companyOK(r)));
+    for (const j of (present.length ? present : ["拆櫃", "拉線", "疊櫃"])) {
       const items = arr.filter(m => m.job === j);
       h += `<div class="card"><h2><span class="job">${j}</span> 常錯題（${items.length} 題有答錯 · 複測題庫）</h2>${tableFor(items)}</div>`;
     }
