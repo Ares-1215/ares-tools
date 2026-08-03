@@ -178,7 +178,8 @@ const view = document.getElementById("view");
 const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 const pct = x => (x*100).toFixed(1)+"%";
 const d2 = s => (s||"").slice(5); // MM-DD
-const todayStr = () => new Date(Date.now()+8*3600000).toISOString().slice(0,10);
+// 業務日切換點：每天 09:00(台北)換題，09:00 前計入前一天（與後端一致）
+const todayStr = () => new Date(Date.now()+8*3600000-9*3600000).toISOString().slice(0,10);
 function fmtTime(shiftMs){ return new Date(shiftMs).toISOString().slice(11,16); }
 function fmtDT(shiftMs){ const iso=new Date(shiftMs).toISOString(); return iso.slice(5,7)+"/"+iso.slice(8,10)+" "+iso.slice(11,16); }
 
@@ -859,7 +860,7 @@ async function renderCenter(){
     <div id="clist">載入中…</div></div>
   <div class="card">
     <b>⏰ 截止時間設定（中心 × 單位）</b>
-    <div class="sub" style="margin:4px 0 8px">各中心「發送單位／到著單位」的每日測驗截止時間。<b>當日</b>＝當天該時分；<b>隔日</b>＝跨午夜到隔天該時分（夜班用，例：到著 隔日 01:00）。<br><b>啟用截止</b>取消勾選＝該單位<b>無截止時間限制</b>，員工可隨時作答。</div>
+    <div class="sub" style="margin:4px 0 8px">各中心「發送單位／到著單位」的每日測驗截止時間。<b>當日</b>＝當天該時分；<b>隔日</b>＝跨午夜到隔天該時分（夜班用，例：到著 隔日 01:00）。<br>📅 <b>題目每日 09:00 更新</b>；09:00 前作答計入前一天（夜班整段班別歸同一天）。<br><b>啟用截止</b>取消勾選＝該單位<b>無截止時間限制</b>，員工可隨時作答。</div>
     <div id="dlmsg"></div><div id="dllist">載入中…</div></div>`;
   document.getElementById("add").onclick = async ()=>{
     const name = document.getElementById("cn").value.trim();
