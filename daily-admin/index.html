@@ -655,25 +655,6 @@ function groupAgg(keyFn){
   for(const r of flatScoped()){ const k=keyFn(r)||"（未填）"; let g=map.get(k); if(!g){ g={key:k,n:0,wrong:0,ppl:new Set()}; map.set(k,g); } g.n++; if(r.is_wrong) g.wrong++; g.ppl.add(r.name); }
   return [...map.values()].map(g=>({ key:g.key, n:g.n, wrong:g.wrong, rate:g.n?(g.n-g.wrong)/g.n:0, people:g.ppl.size })).sort((a,b)=>b.rate-a.rate||b.n-a.n);
 }
-// 組合圖：淡色長條=每日受測人數，折線=每日答對率(%)
-function trendSVG(days){
-  if(!days.length) return `<div class="empty">此範圍尚無資料</div>`;
-  const W=Math.max(320, days.length*46+56), H=210, padL=32, padR=14, padT=14, padB=36;
-  const iw=W-padL-padR, ih=H-padT-padB, one=days.length===1;
-  const maxP=Math.max(1, ...days.map(d=>d.people));
-  const x=i=> padL + (one? iw/2 : iw*i/(days.length-1));
-  const yR=v=> padT + ih*(1-v);
-  const bw=Math.min(28, (iw/days.length)*0.55);
-  let bars="", grid="", dots="", xl="";
-  [0,0.5,1].forEach(g=>{ const yy=yR(g); grid+=`<line class="grid" x1="${padL}" y1="${yy.toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${yy.toFixed(1)}"/><text x="${padL-6}" y="${(yy+3).toFixed(1)}" text-anchor="end">${g*100}</text>`; });
-  days.forEach((d,i)=>{ const bh=ih*(d.people/maxP); bars+=`<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(padT+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,bh).toFixed(1)}" rx="3" fill="var(--chip)"><title>${d.date}　受測 ${d.people} 人　答對率 ${pct(d.rate)}</title></rect>`; });
-  const pts=days.map((d,i)=>`${x(i).toFixed(1)},${yR(d.rate).toFixed(1)}`).join(" ");
-  days.forEach((d,i)=>{ dots+=`<circle cx="${x(i).toFixed(1)}" cy="${yR(d.rate).toFixed(1)}" r="3.2" fill="var(--accent)"><title>${d.date}　答對率 ${pct(d.rate)}（${d.n} 題）</title></circle>`; });
-  const step=days.length>14?Math.ceil(days.length/14):1;
-  days.forEach((d,i)=>{ if(i%step!==0 && i!==days.length-1) return; xl+=`<text x="${x(i).toFixed(1)}" y="${(H-padB+16)}" text-anchor="middle">${d2(d.date)}</text>`; });
-  return `<svg class="aline" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMid meet" role="img">
-    ${grid}${bars}<polyline fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round" points="${pts}"/>${dots}${xl}</svg>`;
-}
 function donutSVG(pass, total){
   const r=52, c=2*Math.PI*r, frac=total?pass/total:0, pl=(c*frac);
   return `<svg class="donut" width="132" height="132" viewBox="0 0 132 132" role="img">
@@ -691,7 +672,6 @@ function groupBarsHTML(items){
     <span class="gv">${pct(g.rate)} <span class="gsub">${g.people}人 / ${g.n}題</span></span></div>`).join("");
 }
 function renderAnalysis(){
-  const days = analysisDaily();
   const groupers = { company:["🏢 人力公司", r=>companyOf(r.emp_id)], center:["🚚 中心", r=>r.center], unit:["📦 單位", r=>r.unit], job:["🏷️ 工種", r=>r.job_type] };
   const gb = groupers[bs.groupBy] ? bs.groupBy : "company";
   const gitems = groupAgg(groupers[gb][1]);
@@ -702,9 +682,7 @@ function renderAnalysis(){
   const qn = flat.length, qw = flat.filter(r=>r.is_wrong).length;
   const avgRate = qn?(qn-qw)/qn:0;
   const gseg = Object.entries(groupers).map(([k,[lab]])=>`<button class="${gb===k?'on':''}" data-gb="${k}">${lab}</button>`).join("");
-  let h = `<div class="card pad0"><h2>📈 每日答對率 × 受測人數 <span class="h2note">${bs.job==="全部"?"全工種合計":bs.job}　▮ 受測人數　— 答對率(%)</span></h2>
-      <div style="padding:6px 8px 10px">${trendSVG(days)}</div></div>
-    <div class="card pad0"><h2>📊 群組答對率對比 <span class="h2note">由高到低排序</span></h2>
+  let h = `<div class="card pad0"><h2>📊 群組答對率對比 <span class="h2note">由高到低排序</span></h2>
       <div class="asel"><div class="seg" id="gbSeg">${gseg}</div></div>
       <div style="padding:6px 0 12px">${groupBarsHTML(gitems)}</div></div>
     <div class="card pad0"><h2>🎯 通過率總覽 <span class="h2note">以整份(3題全對)計，不受工種篩選影響</span></h2>
