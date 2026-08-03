@@ -104,6 +104,10 @@
   .asel{display:flex;gap:8px;align-items:center;padding:10px 16px 2px;flex-wrap:wrap}
   .asel .afg{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
   .asel .afg select{min-width:0}
+  /* 題庫圖片 */
+  .qimg-thumb{max-width:110px;max-height:74px;border-radius:6px;border:1px solid var(--line);display:block;object-fit:cover}
+  .imgcell{display:flex;flex-direction:column;gap:4px;min-width:120px}
+  .imgcell .imgbtns{display:flex;gap:6px;flex-wrap:wrap}
   .aline{width:100%;height:auto;display:block}
   .aline .grid{stroke:var(--line);opacity:.55} .aline text{fill:var(--muted);font-size:10px}
   .gbar{display:grid;grid-template-columns:116px 1fr auto;gap:10px;align-items:center;padding:6px 16px;font-size:12.5px}
@@ -290,7 +294,7 @@ function renderLogin(){
 // 權限鎖：非可操作者，將寫入類按鈕/欄位停用
 function lockNote(){ return canEdit()?"":`<div class="msg warn">🔒 你目前為「僅檢視」權限，無法在此操作。請洽陳尚福（工號 26516）開通。</div>`; }
 function applyLock(){ if(canEdit()) return;
-  view.querySelectorAll("button.act, #bk .sv, #clist .dis, #plist button").forEach(b=>{ b.disabled=true; b.style.opacity=".5"; b.style.cursor="not-allowed"; });
+  view.querySelectorAll("button.act, #bk .sv, #bk .del, #clist .dis, #plist button").forEach(b=>{ b.disabled=true; b.style.opacity=".5"; b.style.cursor="not-allowed"; });
   view.querySelectorAll("input, select, textarea").forEach(el=>{ el.disabled=true; }); }
 
 /* ==========================================================
@@ -898,6 +902,22 @@ async function loadExt(){
 /* ==========================================================
    題庫管理（原樣）
    ========================================================== */
+// 圖片壓縮：縮到最長邊 maxDim、輸出 JPEG，回傳 data URI（縮小 DB 與作答頁流量）
+function compressImage(file, maxDim=900, quality=0.72){
+  return new Promise((resolve,reject)=>{
+    if(!file || !/^image\//.test(file.type)) return reject(new Error("非圖片檔"));
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{ URL.revokeObjectURL(url);
+      let w=img.naturalWidth, h=img.naturalHeight;
+      if(w>h){ if(w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; } } else { if(h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; } }
+      const c=document.createElement("canvas"); c.width=w; c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      resolve(c.toDataURL("image/jpeg",quality));
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error("圖片讀取失敗")); };
+    img.src=url;
+  });
+}
 async function renderBank(){
   view.innerHTML = `${lockNote()}
   <div class="card">
@@ -914,6 +934,11 @@ async function renderBank(){
     <div id="ntf" style="margin-top:8px">正解：
       <label style="font-weight:400"><input type="radio" name="ntfc" value="是" checked style="width:auto"> 是</label>
       <label style="font-weight:400"><input type="radio" name="ntfc" value="否" style="width:auto"> 否</label>
+    </div>
+    <div style="margin-top:10px">
+      <label style="font-size:13px;font-weight:600">🖼️ 輔助圖片（選填，作答時顯示在題目上方）</label>
+      <input type="file" id="nimg" accept="image/*" style="display:block;margin-top:4px;font-size:12px">
+      <div id="nimgprev" style="margin-top:6px"></div>
     </div>
     <button class="act" id="nadd" style="margin-top:10px">新增到題庫</button>
     <div id="nmsg"></div>
@@ -942,9 +967,18 @@ function wireAddForm(){
   job.onchange = ()=>{ type.value = job.value==="拆櫃"?"choice":"tf"; syncType(); };
   type.onchange = syncType;
   type.value = "choice"; syncType();
+  // 輔助圖片
+  let addImage = "";
+  const nimg = document.getElementById("nimg"), nprev = document.getElementById("nimgprev");
+  const drawPrev = ()=>{ nprev.innerHTML = addImage
+    ? `<img class="qimg-thumb" src="${addImage}"> <button class="sec" type="button" id="nimgrm" style="margin-top:4px">移除圖片</button>`
+    : ""; const rm=document.getElementById("nimgrm"); if(rm) rm.onclick=()=>{ addImage=""; nimg.value=""; drawPrev(); }; };
+  nimg.onchange = async ()=>{ const f=nimg.files&&nimg.files[0]; if(!f) return;
+    try{ addImage = await compressImage(f); drawPrev(); }catch(_){ nprev.innerHTML=`<span class="warn" style="font-size:12px">圖片讀取失敗</span>`; } };
   document.getElementById("nadd").onclick = async ()=>{
     const nmsg = document.getElementById("nmsg");
     const body = { job_type: job.value, qtype: type.value, question: document.getElementById("nq").value.trim() };
+    if(addImage) body.image = addImage;
     if(!body.question){ nmsg.innerHTML = `<div class="msg warn">請輸入題目</div>`; return; }
     if(type.value==="tf"){ body.correct = document.querySelector('input[name=ntfc]:checked').value; }
     else {
@@ -956,9 +990,10 @@ function wireAddForm(){
     const g = await api("bank_add", { body });
     if(g.ok){ nmsg.innerHTML = `<div class="msg ok">✅ 已新增</div>`;
       document.getElementById("nq").value=""; if(document.getElementById("nopts")) document.getElementById("nopts").value=""; if(document.getElementById("ncorrect")) document.getElementById("ncorrect").value="";
+      addImage=""; nimg.value=""; drawPrev();
       loadBankList();
     } else {
-      const m = { duplicate:"此工種已有相同題目", bad_job:"工種錯誤", empty_q:"請輸入題目", need_2_options:"至少需 2 個選項", correct_mismatch:"正解需與某選項相同" }[g.reason] || "新增失敗";
+      const m = { duplicate:"此工種已有相同題目", bad_job:"工種錯誤", empty_q:"請輸入題目", need_2_options:"至少需 2 個選項", correct_mismatch:"正解需與某選項相同", image_too_large:"圖片過大，請換小一點的圖" }[g.reason] || "新增失敗";
       nmsg.innerHTML = `<div class="msg warn">${esc(m)}</div>`;
     }
   };
@@ -970,26 +1005,44 @@ async function loadBankList(){
   const html = rows.map(q=>{
     const opts = (q.options||[]).join("\n");
     return `<tr data-id="${q.id}">
+      <td><button class="sec del" title="永久刪除此題">🗑</button></td>
       <td>${esc(q.job_type)}</td>
-      <td style="min-width:220px;white-space:normal">${esc(q.question)}</td>
-      <td><textarea class="o" rows="${Math.max(2,(q.options||[]).length)}" style="width:230px;font-size:12px">${esc(opts)}</textarea><div class="muted" style="font-size:11px">每行一個選項</div></td>
-      <td><input class="c" value="${esc(q.correct)}" style="width:180px"></td>
+      <td style="min-width:190px;white-space:normal">${esc(q.question)}</td>
+      <td><div class="imgcell"><div class="imgprev"></div>
+        <div class="imgbtns"><label class="sec" style="cursor:pointer;font-size:12px">選圖<input type="file" accept="image/*" class="imgf" style="display:none"></label></div></div></td>
+      <td><textarea class="o" rows="${Math.max(2,(q.options||[]).length)}" style="width:220px;font-size:12px">${esc(opts)}</textarea><div class="muted" style="font-size:11px">每行一個選項</div></td>
+      <td><input class="c" value="${esc(q.correct)}" style="width:170px"></td>
       <td><input type="checkbox" class="a" ${q.active?'checked':''}></td>
       <td><button class="act sv">儲存</button></td></tr>`;
   }).join("");
   document.getElementById("bk").innerHTML = `<div class="tblwrap"><table>
-    <thead><tr><th>工種</th><th>題目</th><th>選項</th><th>正解(需與某選項完全相同)</th><th>啟用</th><th></th></tr></thead>
+    <thead><tr><th></th><th>工種</th><th>題目</th><th>圖片</th><th>選項</th><th>正解(需與某選項完全相同)</th><th>啟用</th><th></th></tr></thead>
     <tbody>${html}</tbody></table></div><div id="bmsg"></div>`;
+  const byId = {}; rows.forEach(q=>byId[q.id]=q);
   document.querySelectorAll("#bk tr[data-id]").forEach(tr=>{
+    const id = +tr.dataset.id;
+    tr._img = byId[id].image || "";
+    const prev = tr.querySelector(".imgprev");
+    const drawPrev = ()=>{ prev.innerHTML = tr._img
+      ? `<img class="qimg-thumb" src="${tr._img}"><button class="sec imgrm" type="button" style="font-size:12px;margin-top:3px">移除圖片</button>`
+      : `<span class="muted" style="font-size:11px">無圖片</span>`;
+      const rm=tr.querySelector(".imgrm"); if(rm) rm.onclick=()=>{ tr._img=""; drawPrev(); }; };
+    drawPrev();
+    tr.querySelector(".imgf").onchange = async (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return;
+      try{ tr._img = await compressImage(f); drawPrev(); }catch(_){ bmsg("圖片讀取失敗",false); } };
     tr.querySelector(".sv").onclick = async ()=>{
-      const id = +tr.dataset.id;
       const options = tr.querySelector(".o").value.split("\n").map(s=>s.trim()).filter(Boolean);
       const correct = tr.querySelector(".c").value.trim();
       const active = tr.querySelector(".a").checked;
       if(active && !options.includes(correct)){ bmsg("⚠️ 正解必須與某個選項完全相同",false); return; }
       if(active && options.length<2){ bmsg("⚠️ 啟用題目至少需 2 個選項",false); return; }
-      const g = await api("bank_update", { body:{ id, options, correct, active } });
-      bmsg(g.ok?`✅ 已儲存 #${id}`:"❌ 失敗", g.ok);
+      const g = await api("bank_update", { body:{ id, options, correct, active, image: tr._img } });
+      bmsg(g.ok?`✅ 已儲存 #${id}`:("❌ "+({image_too_large:"圖片過大",bad_image:"圖片格式錯誤"}[g.reason]||"失敗")), g.ok);
+    };
+    tr.querySelector(".del").onclick = async ()=>{
+      if(!confirm(`確定「永久刪除」這題？（${byId[id].job_type}）\n${byId[id].question}\n\n此動作無法復原，但不影響已作答的歷史成績。`)) return;
+      const g = await api("bank_delete", { body:{ id } });
+      if(g.ok){ bmsg(`🗑 已刪除 #${id}`,true); loadBankList(); } else bmsg("❌ 刪除失敗",false);
     };
   });
   function bmsg(t,ok){ document.getElementById("bmsg").innerHTML = `<div class="msg ${ok?'ok':'warn'}">${esc(t)}</div>`; }

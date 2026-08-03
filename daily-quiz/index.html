@@ -37,6 +37,7 @@
   .q .jt{display:inline-block;background:var(--brand);color:#fff;font-size:12px;font-weight:800;
     padding:2px 10px;border-radius:20px;margin-bottom:8px}
   .q .qt{font-size:16px;font-weight:600;margin-bottom:10px}
+  .q .qimg{display:block;max-width:100%;max-height:320px;border-radius:10px;border:1px solid var(--line);margin:0 0 12px}
   .opt{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:10px;
     padding:12px;margin-bottom:8px;cursor:pointer;font-size:15px;background:var(--bg)}
   .opt.sel{border-color:var(--brand);background:var(--okbg)}
@@ -209,7 +210,7 @@ function renderQuiz(company){
         <span>${esc(o)}</span>
       </label>`).join("");
     return `<div class="q"><span class="jt">${esc(q.job_type)}</span>
-      <div class="qt">${i+1}. ${esc(q.question)}</div>${opts}</div>`;
+      <div class="qt">${i+1}. ${esc(q.question)}</div>${q.image?`<img class="qimg" src="${q.image}" alt="題目輔助圖" loading="lazy">`:""}${opts}</div>`;
   }).join("");
   app.innerHTML = `
     <div class="bar">${STATE.deadline
