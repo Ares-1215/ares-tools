@@ -128,27 +128,6 @@
   .spin{display:inline-block;width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:s .8s linear infinite;vertical-align:-4px;margin-right:8px}
   @keyframes s{to{transform:rotate(360deg)}}
   .hide{display:none}
-  /* ── 手機版排版（≤640px）：工具列、分段切換、篩選器改為整齊成列，避免零散換行 ── */
-  @media (max-width:640px){
-    .wrap{padding:14px 12px 48px}
-    header.top{gap:8px}
-    h1{font-size:17px}
-    .sub{font-size:12.5px}
-    .toolbtns{width:100%}
-    .toolbtns .theme-btn{flex:1 1 auto;text-align:center}
-    .tiles{grid-template-columns:repeat(2,1fr)}
-    .tile .v{font-size:22px}
-    .bar{gap:6px}
-    .seg{display:flex;width:100%}
-    .seg button{flex:1 1 auto;text-align:center;padding:8px 6px}
-    .bar input[type=search]{flex:1 1 100%;min-width:0}
-    .bar select{flex:1 1 100%;min-width:0}
-    .bar span{display:block;width:100%;margin:8px 0 -2px 0!important}
-    .bar .theme-btn{flex:1 1 100%}
-    .modal{padding:14px 8px}
-    .mstat{padding:10px 14px 2px}
-    .mbody{padding:6px 12px 14px}
-  }
   /* 列印 */
   @media print{
     body{background:#fff}
@@ -374,7 +353,8 @@ function render() {
   if (sub && DATES.length) sub.textContent = `人員教育訓練成績管理　${DATES[0].replace(/-/g, "/")}–${DATES[DATES.length - 1].slice(5).replace("-", "/")}　拆櫃 · 拉線 · 疊櫃`;
   const fu = document.getElementById("fUpdated"); if (fu && DATES.length) fu.textContent = DATES[DATES.length - 1];
   const ff = document.getElementById("fForms"); if (ff) ff.textContent = new Set(ALL.map(r => r.test_date + "|" + r.job_type)).size;
-  const jobs = ["全部", "拆櫃", "拉線", "疊櫃"];
+  const hasLihuo = ALL.some(r => r.job_type === "理貨");
+  const jobs = ["全部", "拆櫃", "拉線", "疊櫃", ...(hasLihuo ? ["理貨"] : [])];
   let h = "";
   h += `<div class="tiles">
     <div class="tile"><div class="k">總測驗人次</div><div class="v">${s.total}</div></div>
@@ -400,6 +380,7 @@ function render() {
     <div class="seg" id="jobSeg">${jobs.map(j => `<button class="${state.job === j ? "on" : ""}" data-job="${j}">${j}</button>`).join("")}</div>
     <div class="seg" id="viewSeg">
       <button class="${state.view === "people" ? "on" : ""}" data-view="people">人員成績表</button>
+      ${hasLihuo ? `<button class="${state.view === "lihuo" ? "on" : ""}" data-view="lihuo">理貨成績（8月）</button>` : ""}
       <button class="${state.view === "wrong" ? "on" : ""}" data-view="wrong">錯題統整</button>
       <button class="${state.view === "rank" ? "on" : ""}" data-view="rank">常錯題排行</button>
       <button class="${state.view === "retest" ? "on" : ""}" data-view="retest">複測追蹤</button>
@@ -432,6 +413,7 @@ function render() {
   </div>`;
 
   if (state.view === "people") h += renderPeople();
+  else if (state.view === "lihuo") h += renderLihuo();
   else if (state.view === "wrong") h += renderWrong();
   else if (state.view === "rank") h += renderRank();
   else if (state.view === "retest") h += renderRetest();
@@ -467,6 +449,55 @@ function renderPeople() {
       <td class="num"><span class="rate">${pct(p.rightRate)}</span>
         <span class="mini"><i style="width:${(p.rightRate*100).toFixed(0)}%"></i></span></td>
       <td class="num">${p.notpass ? `<span class="pill warn">${p.notpass}</span>` : "—"}</td>
+    </tr>`;
+  }
+  h += `</tbody></table></div></div>`;
+  return h;
+}
+
+// ---- 理貨成績（8月合併三題）：首測分數＋補測後最高分 ----
+function lihuoRows() {
+  return ALL.filter(r => r.job_type === "理貨" && dateOK(r) && companyOK(r) && qOK(r))
+    .sort((a, b) => a.test_date.localeCompare(b.test_date)
+      || (a.first_score - b.first_score)
+      || a.name.localeCompare(b.name, "zh-Hant"));
+}
+function renderLihuo() {
+  const rows = lihuoRows();
+  const n = rows.length;
+  const bestOf = r => (r.best_score == null ? r.first_score : r.best_score);
+  const perfect = rows.filter(r => r.first_score >= 100).length;
+  const fixed = rows.filter(r => r.first_score < 100 && bestOf(r) >= 100).length;
+  const still = rows.filter(r => bestOf(r) < 100).length;
+  let h = `<div class="tiles">
+    <div class="tile"><div class="k">理貨測驗人次</div><div class="v">${n}</div></div>
+    <div class="tile"><div class="k">首測即滿分</div><div class="v" style="color:var(--brand)">${perfect}</div></div>
+    <div class="tile"><div class="k">靠補測達標</div><div class="v" style="color:var(--accent)">${fixed}</div></div>
+    <div class="tile"><div class="k">仍未達滿分</div><div class="v" style="color:var(--warn)">${still}</div></div>
+  </div>`;
+  h += `<div class="tilenote">💡 八月起表單整併為<b>一份「理貨人員」三題</b>（Q1輪胎40分／Q2空棧板30分／Q3跨越板30分，滿分100）。<b>首測分數</b>＝當日最早一次；<b>補測後最高分</b>＝當天重測後的最高分。狀態：<b style="color:var(--brand)">綠</b>＝首測即滿分、<b style="color:var(--accent)">藍</b>＝首測未滿但補測後達標、<b style="color:var(--warn)">紅</b>＝仍未達滿分。點姓名看逐題詳情。</div>`;
+  h += `<div class="card"><h2>理貨人員成績（${n} 筆 · 首測分數＋補測後最高分）</h2><div class="tblwrap"><table><thead><tr>
+    <th>姓名</th><th>工號</th><th>人力公司</th><th>日期</th><th class="num">首測分數</th><th class="num">補測後最高分</th><th class="num">作答次數</th><th>狀態</th>
+  </tr></thead><tbody>`;
+  if (!n) h += `<tr><td colspan="8" class="empty">此範圍內沒有理貨資料</td></tr>`;
+  for (const r of rows) {
+    const f = r.first_score, bs = bestOf(r);
+    const status = f >= 100 ? `<span class="pill ok">首測滿分</span>`
+      : (bs >= 100 ? `<span class="pill ok">補測後達標</span>`
+                   : `<span class="pill warn">仍未達滿分</span>`);
+    const fStyle = f >= 100 ? "font-weight:700" : "color:var(--warn);font-weight:800";
+    const bShow = f >= 100
+      ? `<span style="color:var(--muted)">（免補測）</span>`
+      : (bs > f ? `<span style="color:var(--brand);font-weight:800">→ ${bs}分${bs >= 100 ? " ✓" : ""}</span>`
+                : `<span style="color:var(--warn);font-weight:800">${bs}分（未再測）</span>`);
+    h += `<tr>
+      <td>${nameLink(r.name)}</td><td style="color:var(--muted)">${esc(r.emp_id)}</td>
+      <td style="color:var(--muted);font-size:12px">${companyOf(r.emp_id)}</td>
+      <td class="mdate">${d2(r.test_date)}</td>
+      <td class="num"><span style="${fStyle}">${f}分</span></td>
+      <td class="num">${bShow}</td>
+      <td class="num">${r.submissions ?? "—"}</td>
+      <td>${status}</td>
     </tr>`;
   }
   h += `</tbody></table></div></div>`;
@@ -671,7 +702,24 @@ function openPerson(name) {
     <div class="mbody"><div class="tblwrap"><table><thead><tr>
       <th>日期</th><th>工種</th><th>結果</th><th class="num">作答次數</th><th>題目</th><th>你的答案</th><th>正解</th>
     </tr></thead><tbody>`;
+  const QN = { 1: "Q1 輪胎54cm", 2: "Q2 空棧板", 3: "Q3 跨越板" };
   for (const r of recs) {
+    if (r.job_type === "理貨") {   // 8月合併三題：顯示分數＋逐題
+      const f = r.first_score, bs = (r.best_score == null ? f : r.best_score);
+      const badge = f >= 100 ? '<span class="pill ok">首測滿分</span>'
+        : (bs >= 100 ? `<span class="pill ok">首測${f}分 → 補測後達標 ✓</span>`
+                     : `<span class="pill warn">首測${f}分 · 仍未達滿分</span>`);
+      const ans = Array.isArray(r.answers) ? r.answers : [];
+      const qcell = ans.length
+        ? ans.map(a => `<div style="font-size:12px;line-height:1.7">${a.w ? "❌" : "✅"} ${QN[a.n] || ("Q" + a.n)}：<span class="${a.w ? "x" : ""}">${esc(a.c)}</span></div>`).join("")
+        : '<span style="color:var(--muted)">—</span>';
+      b += `<tr>
+        <td class="mdate">${esc(r.test_date)}</td><td><span class="job">理貨</span></td>
+        <td>${badge}</td><td class="num">${r.submissions ?? "—"}</td>
+        <td class="rank-q" colspan="3">${qcell}</td>
+      </tr>`;
+      continue;
+    }
     const badge = r.is_wrong
       ? (r.passed ? '<span class="pill ok">答錯·已補正</span>' : '<span class="pill warn">答錯·未通過</span>')
       : '<span class="pill ok">答對</span>';
@@ -706,6 +754,14 @@ function exportCSV() {
     const rows = [["姓名", "工號", "工種", "參加天數", "首測答對", "首測答錯", "答對率", "曾未通過"]];
     for (const p of personRows()) rows.push([p.name, p.emp_id, p.jobs.join("/"), p.total, p.right, p.wrong, pct(p.rightRate), p.notpass]);
     download(`人員成績表_${tag}.csv`, rows);
+  } else if (state.view === "lihuo") {
+    const rows = [["姓名", "工號", "人力公司", "日期", "首測分數", "補測後最高分", "作答次數", "狀態"]];
+    for (const r of lihuoRows()) {
+      const bs = (r.best_score == null ? r.first_score : r.best_score);
+      const st = r.first_score >= 100 ? "首測滿分" : (bs >= 100 ? "補測後達標" : "仍未達滿分");
+      rows.push([r.name, r.emp_id, companyOf(r.emp_id), r.test_date, r.first_score, bs, r.submissions ?? "", st]);
+    }
+    download(`理貨成績_${tag}.csv`, rows);
   } else if (state.view === "wrong") {
     const rows = [["姓名", "工號", "工種", "日期", "狀態", "題目", "你的答案", "正解"]];
     for (const p of wrongData()) for (const r of p.items)
