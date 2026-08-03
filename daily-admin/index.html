@@ -202,8 +202,7 @@ const view = document.getElementById("view");
 const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 const pct = x => (x*100).toFixed(1)+"%";
 const d2 = s => (s||"").slice(5); // MM-DD
-// todayStr＝日曆日(00:00 換)：看板「今日」用。bizToday＝業務日(每天 08:00 換題/歸戶)：延後審核截止用，與後端一致。
-const todayStr = () => new Date(Date.now()+8*3600000).toISOString().slice(0,10);
+// bizToday＝業務日(每天 08:00 換題/歸戶，08:00 前計入前一天)：當日明細、延後審核皆以此為準，與後端一致。
 const bizToday = () => new Date(Date.now()+8*3600000-8*3600000).toISOString().slice(0,10);
 function fmtTime(shiftMs){ return new Date(shiftMs).toISOString().slice(11,16); }
 function fmtDT(shiftMs){ const iso=new Date(shiftMs).toISOString(); return iso.slice(5,7)+"/"+iso.slice(8,10)+" "+iso.slice(11,16); }
@@ -305,7 +304,7 @@ let FLAT = [];      // 逐題攤平：{name,emp_id,job_type,test_date,question,c
 let DATES = [];
 let RANGE_LOADED = false;
 let bs = { view:"board", job:"全部", q:"", company:"全部", center:"全部", unit:"全部", from:"", to:"", year:"全部", month:"全部",
-  boardDate: todayStr(), sortKey:"wrongRate", sortDir:-1,
+  boardDate: bizToday(), sortKey:"wrongRate", sortDir:-1,
   // 數據分析：兩面板各自獨立的 中心/單位/公司 篩選
   gCenter:"全部", gUnit:"全部", gCompany:"全部", pCenter:"全部", pUnit:"全部", pCompany:"全部" };
 
@@ -322,7 +321,7 @@ async function loadRange(){
     }
   }
   DATES = [...new Set(RESULTS.map(r=>r.test_date))].sort();
-  if(!DATES.length) DATES=[todayStr()];
+  if(!DATES.length) DATES=[bizToday()];
   if(!bs.from || !DATES.includes(bs.from)) bs.from = DATES[0];
   if(!bs.to || !DATES.includes(bs.to)) bs.to = DATES[DATES.length-1];
   RANGE_LOADED = true;
@@ -382,9 +381,9 @@ function draw(){
       <button class="sec rf" id="rf"><svg class="rfi" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg>重新整理</button>
       ${(bs.from!==DATES[0]||bs.to!==DATES[DATES.length-1])?`<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${bs.from.slice(5)}~${bs.to.slice(5)}</span>`:""}</div>`;
   } else if(bs.view==="board"){
-    bs.boardDate = todayStr();
+    bs.boardDate = bizToday();
     h += `<div class="bar noprint">
-      <span class="muted" style="font-size:13px;font-weight:600">📅 今日 ${bs.boardDate}</span>
+      <span class="muted" style="font-size:13px;font-weight:600">📅 測驗日 ${bs.boardDate} <span style="font-weight:400">（每日 08:00 換）</span></span>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">🚚 中心</span>
       <select id="centerSel">${centerOpts}</select>
       <span class="muted" style="font-size:13px;font-weight:600;margin-left:6px">📦 單位</span>
