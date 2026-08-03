@@ -1004,9 +1004,13 @@ async function loadBankList(){
   const html = rows.map(q=>{
     const opts = (q.options||[]).join("\n");
     return `<tr data-id="${q.id}">
-      <td><button class="sec del" title="永久刪除此題">🗑</button></td>
+      <td><div style="display:flex;flex-direction:column;gap:4px">
+        <button class="sec edq" title="編輯題目">✏️</button>
+        <button class="sec del" title="永久刪除此題">🗑</button></div></td>
       <td>${esc(q.job_type)}</td>
-      <td style="min-width:190px;white-space:normal">${esc(q.question)}</td>
+      <td style="min-width:190px;white-space:normal">
+        <div class="qview">${esc(q.question)}</div>
+        <textarea class="qedit" rows="3" style="display:none;width:220px;font-size:13px">${esc(q.question)}</textarea></td>
       <td><div class="imgcell"><div class="imgprev"></div>
         <div class="imgbtns"><label class="sec" style="cursor:pointer;font-size:12px">選圖<input type="file" accept="image/*" class="imgf" style="display:none"></label></div></div></td>
       <td><textarea class="o" rows="${Math.max(2,(q.options||[]).length)}" style="width:220px;font-size:12px">${esc(opts)}</textarea><div class="muted" style="font-size:11px">每行一個選項</div></td>
@@ -1029,14 +1033,19 @@ async function loadBankList(){
     drawPrev();
     tr.querySelector(".imgf").onchange = async (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return;
       try{ tr._img = await compressImage(f); drawPrev(); }catch(_){ bmsg("圖片讀取失敗",false); } };
+    tr.querySelector(".edq").onclick = ()=>{ const v=tr.querySelector(".qview"), e=tr.querySelector(".qedit");
+      if(e.style.display==="none"){ v.style.display="none"; e.style.display=""; e.focus(); } else { v.style.display=""; e.style.display="none"; } };
     tr.querySelector(".sv").onclick = async ()=>{
+      const question = tr.querySelector(".qedit").value.trim();
       const options = tr.querySelector(".o").value.split("\n").map(s=>s.trim()).filter(Boolean);
       const correct = tr.querySelector(".c").value.trim();
       const active = tr.querySelector(".a").checked;
+      if(!question){ bmsg("⚠️ 題目不可空白",false); return; }
       if(active && !options.includes(correct)){ bmsg("⚠️ 正解必須與某個選項完全相同",false); return; }
       if(active && options.length<2){ bmsg("⚠️ 啟用題目至少需 2 個選項",false); return; }
-      const g = await api("bank_update", { body:{ id, options, correct, active, image: tr._img } });
-      bmsg(g.ok?`✅ 已儲存 #${id}`:("❌ "+({image_too_large:"圖片過大",bad_image:"圖片格式錯誤"}[g.reason]||"失敗")), g.ok);
+      const g = await api("bank_update", { body:{ id, question, options, correct, active, image: tr._img } });
+      if(g.ok){ tr.querySelector(".qview").textContent = question; tr.querySelector(".qview").style.display=""; tr.querySelector(".qedit").style.display="none"; }
+      bmsg(g.ok?`✅ 已儲存 #${id}`:("❌ "+({image_too_large:"圖片過大",bad_image:"圖片格式錯誤",empty_q:"題目不可空白"}[g.reason]||"失敗")), g.ok);
     };
     tr.querySelector(".del").onclick = async ()=>{
       if(!confirm(`確定「永久刪除」這題？（${byId[id].job_type}）\n${byId[id].question}\n\n此動作無法復原，但不影響已作答的歷史成績。`)) return;
