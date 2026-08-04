@@ -479,37 +479,38 @@ function lihuoOverview() {
   return h;
 }
 
-// —— 逐題弱點：依 Q1/Q2/Q3 題序彙整首測答錯率 ——
+// —— 逐題弱點：依「題目內容」彙整（相同題目跨日合併），答錯率高者在上 ——
+const lhNormQ = q => (q || "").replace(/^\s*\d+\s*[.．、,，)）]\s*/, "").trim();  // 去掉開頭題號（"3." / "3、" 等）
 function lihuoPerQ() {
   const rows = lihuoBase();
-  const pos = { 1: { wrong: 0, total: 0, qs: new Map() }, 2: { wrong: 0, total: 0, qs: new Map() }, 3: { wrong: 0, total: 0, qs: new Map() } };
+  const map = new Map();
   for (const r of rows) for (const a of (Array.isArray(r.answers) ? r.answers : [])) {
-    const p = pos[a.n]; if (!p) continue;
-    p.total++; if (a.w) p.wrong++;
-    let m = p.qs.get(a.q); if (!m) { m = { q: a.q, wrong: 0, total: 0, correct: "" }; p.qs.set(a.q, m); }
+    const key = lhNormQ(a.q);
+    if (!key) continue;
+    let m = map.get(key); if (!m) { m = { q: key, wrong: 0, total: 0, correct: "", pos: new Set() }; map.set(key, m); }
     m.total++; if (a.w) m.wrong++; else if (a.c && !m.correct) m.correct = a.c;
+    if (a.n) m.pos.add(a.n);
   }
-  const items = [1, 2, 3].map(nn => ({ n: nn, ...pos[nn], rate: pos[nn].total ? pos[nn].wrong / pos[nn].total : 0 }))
-    .filter(x => x.total > 0).sort((a, b) => b.rate - a.rate);   // 最弱在上
+  const items = [...map.values()].map(m => {
+    const ps = [...m.pos];
+    const weight = ps.length === 1 ? LIHUO_W[ps[0]] : (ps.length ? ps.sort().map(p => LIHUO_W[p]).join("/") : "?");
+    return { ...m, rate: m.total ? m.wrong / m.total : 0, weight };
+  }).sort((a, b) => b.rate - a.rate || b.wrong - a.wrong || b.total - a.total);
   if (!items.length) return `<div class="card"><div class="empty" style="padding:30px">此範圍內沒有理貨作答資料</div></div>`;
-  let h = `<div class="card"><h2>逐題弱點分析 <span class="h2note">依 Q1/Q2/Q3 題序彙整首測答錯率（配分 40/30/30，弱點在上）</span></h2><div style="padding:6px 16px 16px">`;
-  for (const it of items) {
+  let h = `<div class="card"><h2>逐題弱點分析 <span class="h2note">依題目內容彙整（相同題目跨日合併計算），首測答錯率高者在上</span></h2><div style="padding:8px 16px 16px">`;
+  items.forEach((it, i) => {
     const col = it.rate >= 0.15 ? "var(--warn)" : it.rate >= 0.05 ? "var(--accent)" : "var(--brand)";
     const w = Math.min(it.rate, 1) * 100;
-    h += `<div style="margin:14px 0 6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <b style="font-size:15px">Q${it.n}</b><span class="pill mut">配分 ${LIHUO_W[it.n]}</span>
-      <span class="achbar" style="width:160px"><i style="width:${w.toFixed(0)}%;background:${col}"></i></span>
-      <b style="color:${col}">答錯率 ${pct(it.rate)}</b>
-      <span style="color:var(--muted);font-size:12px">（首測答錯 ${it.wrong} / ${it.total} 人次）</span></div>`;
-    const qs = [...it.qs.values()].sort((a, b) => (b.wrong / b.total) - (a.wrong / a.total));
-    for (const m of qs) {
-      const mr = m.total ? m.wrong / m.total : 0;
-      h += `<div style="padding:5px 0 5px 14px;border-left:2px solid var(--line);margin:0 0 4px 4px;font-size:13px">
-        <div style="color:var(--ink);font-weight:600">${esc(m.q)}</div>
-        <div style="color:var(--muted);font-size:12px">答錯 ${m.wrong}/${m.total}（${pct(mr)}）${m.correct ? `　正解：<span style="color:var(--brand);font-weight:700">${esc(m.correct)}</span>` : ""}</div>
-      </div>`;
-    }
-  }
+    h += `<div style="margin:${i ? 14 : 4}px 0 0;padding:0 0 13px;border-bottom:1px solid var(--line)">
+      <div style="color:var(--ink);font-weight:700;font-size:14px;margin-bottom:7px"><span class="rnk" style="margin-right:6px">${i + 1}</span>${esc(it.q)}</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="pill mut">配分 ${it.weight}</span>
+        <span class="achbar" style="width:150px"><i style="width:${w.toFixed(0)}%;background:${col}"></i></span>
+        <b style="color:${col}">答錯率 ${pct(it.rate)}</b>
+        <span style="color:var(--muted);font-size:12px">（首測答錯 ${it.wrong} / ${it.total} 人次）</span>
+        ${it.correct ? `<span style="color:var(--muted);font-size:12px">正解：<span style="color:var(--brand);font-weight:700">${esc(it.correct)}</span></span>` : ""}
+      </div></div>`;
+  });
   h += `</div></div>`;
   return h;
 }
