@@ -536,13 +536,14 @@ function rankData() {
     if (!jobOK(r)) continue;
     if (!companyOK(r)) continue;
     if (!dateOK(r)) continue;
-    if (r.job_type === "理貨") {   // 8月合併三題：展開 answers 逐題統計
+    if (r.job_type === "理貨") {   // 8月合併：題目每天不同，依題目文字 a.q 分組（同題跨日合併、不同題分開）
       const ans = Array.isArray(r.answers) ? r.answers : [];
       for (const a of ans) {
-        if (!a.w && a.c && lcorrect[a.n] == null) lcorrect[a.n] = a.c;
-        const key = "理貨|" + a.n;
+        const qt = a.q || LIHUO_QT[a.n] || ("Q" + a.n);
+        if (!a.w && a.c && lcorrect[qt] == null) lcorrect[qt] = a.c;
+        const key = "理貨|" + qt;
         let m = map.get(key);
-        if (!m) { m = { job: "理貨", q: LIHUO_QT[a.n] || ("Q" + a.n), qn: a.n, attempts: 0, wrong: 0, correct: "", dates: new Set() }; map.set(key, m); }
+        if (!m) { m = { job: "理貨", q: qt, attempts: 0, wrong: 0, correct: "", dates: new Set() }; map.set(key, m); }
         m.attempts++; if (a.w) m.wrong++; m.dates.add(r.test_date);
       }
       continue;
@@ -554,7 +555,7 @@ function rankData() {
     m.attempts++; if (r.is_wrong) m.wrong++; m.dates.add(r.test_date);
     if (!m.correct && r.correct_option) m.correct = r.correct_option;
   }
-  for (const m of map.values()) if (m.job === "理貨" && !m.correct && lcorrect[m.qn]) m.correct = lcorrect[m.qn];
+  for (const m of map.values()) if (m.job === "理貨" && !m.correct && lcorrect[m.q]) m.correct = lcorrect[m.q];
   let arr = [...map.values()].map(m => ({ ...m, pct: m.attempts ? m.wrong / m.attempts : 0, dates: [...m.dates].sort() }))
     .filter(m => m.wrong > 0)
     .sort((a, b) => b.wrong - a.wrong || b.pct - a.pct || a.job.localeCompare(b.job));
@@ -727,7 +728,7 @@ function openPerson(name) {
                      : `<span class="pill warn">首測${f}分 · 仍未達滿分</span>`);
       const ans = Array.isArray(r.answers) ? r.answers : [];
       const qcell = ans.length
-        ? ans.map(a => `<div style="font-size:12px;line-height:1.7">${a.w ? "❌" : "✅"} ${QN[a.n] || ("Q" + a.n)}：<span class="${a.w ? "x" : ""}">${esc(a.c)}</span></div>`).join("")
+        ? ans.map(a => `<div style="font-size:12px;line-height:1.7">${a.w ? "❌" : "✅"} ${esc(a.q || QN[a.n] || ("Q" + a.n))}：<span class="${a.w ? "x" : ""}">${esc(a.c)}</span></div>`).join("")
         : '<span style="color:var(--muted)">—</span>';
       b += `<tr>
         <td class="mdate">${esc(r.test_date)}</td><td><span class="job">理貨</span></td>
