@@ -163,7 +163,7 @@
   </div>
 
   <div class="foot">
-    資料來源：Google 表單回覆（僅彰化轉運中心・發送單位）· <span id="fUpdated">–</span> 直讀 Google Drive <span id="fForms">–</span> 份表單全量對帳｜每日一題 0/100，首測＝當日最早一次｜7/16 拆櫃已套用答案更正<br>
+    資料來源：Google 表單回覆（僅彰化轉運中心・發送單位）· <span id="fUpdated">–</span> 直讀 Google Drive <span id="fForms">–</span> 份表單全量對帳｜7月：每日一題 0/100；8月起：理貨合併三題（見「理貨成績」分頁）<br>
     即時檢視 · 資料每 5 分鐘自動更新 · 共 <span id="fCount">–</span> 筆人日紀錄
   </div>
 </div>
@@ -181,7 +181,9 @@ let DATES = [];    // distinct sorted dates
 let state = { job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, company: "全部", year: "全部", month: "全部", openBL: false, openNote: false };
 
 const dateOK = r => (!state.from || r.test_date >= state.from) && (!state.to || r.test_date <= state.to);
-const jobOK = r => state.job === "全部" || r.job_type === state.job;
+// 7月模式（拆/拉/疊 每日單題）與 8月模式（理貨 合併三題）分流：
+// 「全部」及拆/拉/疊 各分頁一律排除理貨；8月理貨資料只在「理貨成績（8月開始實施）」分頁呈現。
+const jobOK = r => r.job_type !== "理貨" && (state.job === "全部" || r.job_type === state.job);
 const qOK = r => { if (!state.q) return true; const q = state.q.trim(); return r.name.includes(q) || (r.emp_id || "").includes(q); };
 const companyOK = r => state.company === "全部" || companyOf(r.emp_id) === state.company;
 
@@ -286,69 +288,9 @@ function retestSignCell(name) {
   return esc(rt.teacher) + (rt.signed_date ? " · " + d2(rt.signed_date) : "");
 }
 
-// ---- 應測基準（每日）與人力公司對照 ----
-const EXPECT = { "拆櫃": 22, "拉線": 19, "疊櫃": 55 };
-const DIE_EXPECT = { "有根": 12, "丞閎": 17, "信林": 26 }; // 疊櫃 各人力公司每日應填
+// ---- 人力公司對照（依工號開頭）----
 const companyOf = emp => { emp = (emp || "").trim(); if (emp.length > 8) return "其他"; const p = emp.slice(0, 2);
   return p === "10" ? "有根" : p === "20" ? "丞閎" : p === "30" ? "信林" : p === "00" ? "新竹物流正職" : "其他"; };
-
-function avgDistinctPerDay(rows, keyFn) {
-  const byDate = new Map();
-  for (const r of rows) { if (!byDate.has(r.test_date)) byDate.set(r.test_date, new Set()); byDate.get(r.test_date).add(keyFn(r)); }
-  const days = [...byDate.values()].map(s => s.size);
-  return days.length ? days.reduce((a, b) => a + b, 0) / days.length : 0;
-}
-
-function baselineData() {
-  const jobs = ["拆櫃", "拉線", "疊櫃"].map(j => {
-    const rows = ALL.filter(r => r.job_type === j);
-    return { job: j, expect: EXPECT[j], distinct: new Set(rows.map(r => r.name)).size, avgDay: avgDistinctPerDay(rows, r => r.name) };
-  });
-  const drows = ALL.filter(r => r.job_type === "疊櫃");
-  const compNames = {}; for (const r of drows) (compNames[companyOf(r.emp_id)] ||= new Set()).add(r.name);
-  const ord = { "信林": 0, "有根": 1, "丞閎": 2, "新竹物流正職": 3, "其他": 4 };
-  const companies = Object.keys(compNames).map(c => ({
-    company: c, expect: DIE_EXPECT[c] ?? null, distinct: compNames[c].size,
-    avgDay: avgDistinctPerDay(drows.filter(r => companyOf(r.emp_id) === c), r => r.name),
-  })).sort((a, b) => (ord[a.company] ?? 9) - (ord[b.company] ?? 9));
-  return { jobs, companies };
-}
-
-// 達成率長條：實測/應測，100% 標記在 66.7%（視覺上限 150%）
-function achBar(avg, exp) {
-  if (exp == null) return '<span class="mut">—</span>';
-  const ratio = avg / exp;
-  const w = Math.min(ratio, 1.5) / 1.5 * 100;
-  const col = ratio >= 1 ? "var(--accent)" : "var(--warn)";
-  return `<span class="achbar"><i style="width:${w.toFixed(0)}%;background:${col}"></i><span class="mk" style="left:66.7%"></span></span>`
-    + `<b style="color:${col}">${(ratio * 100).toFixed(0)}%</b>`;
-}
-
-function renderBaseline() {
-  const head = `<div class="note"><div class="noteh"><span>📊 應測基準對照（每日）· 全期間，不受上方篩選影響</span>
-    <button class="notebtn" id="blToggle">${state.openBL ? "收合 ▾" : "展開 ▸"}</button></div>`;
-  if (!state.openBL) return head + `</div>`;
-  const { jobs, companies } = baselineData();
-  const gap = (avg, exp) => exp == null ? '<span class="mut">—</span>'
-    : `<span class="${avg - exp >= 0 ? "over" : "under"}">${avg - exp >= 0 ? "+" : ""}${(avg - exp).toFixed(1)}</span>`;
-  let h = head + `<div class="body">
-    <div class="tblwrap"><table class="bl"><thead><tr>
-      <th>工種／人力公司</th><th>應測(每日)</th><th>每日平均實測</th><th>超額</th><th style="text-align:left">達成率(實測/應測)</th><th>整月不重複</th>
-    </tr></thead><tbody>`;
-  for (const j of jobs) {
-    h += `<tr class="jobrow"><td>${j.job}</td><td>${j.expect}</td><td>${j.avgDay.toFixed(1)}</td>
-      <td>${gap(j.avgDay, j.expect)}</td><td style="text-align:left">${achBar(j.avgDay, j.expect)}</td><td class="mut">${j.distinct}</td></tr>`;
-    if (j.job === "疊櫃") for (const c of companies) {
-      h += `<tr class="sub"><td>└ ${c.company}</td><td>${c.expect ?? '<span class="mut">—</span>'}</td>
-        <td>${c.avgDay.toFixed(1)}</td><td>${gap(c.avgDay, c.expect)}</td><td style="text-align:left">${achBar(c.avgDay, c.expect)}</td><td class="mut">${c.distinct}</td></tr>`;
-    }
-  }
-  h += `</tbody></table></div>
-    <p>「應測」為各作業區<b>每日</b>基本作業人數基準；因到工人員跨組安排，實際答題常<b>高於</b>應測（達成率>100% 屬正常，非異常）。「整月不重複」是 7/01–7/28 曾參與者的累積人數。疊櫃依工號開頭分：10＝有根、20＝丞閎、30＝信林、00＝新竹物流正職。</p>
-    <p style="color:var(--accent)">※ 目前僅有應測「人數」、無應測「名單」，故無法判斷「該測的人是否都測了」，達成率長條呈現的是答題量與應測基準的比值，不是點名涵蓋率。</p>
-  </div></div>`;
-  return h;
-}
 
 function render() {
   const s = stats();
@@ -357,27 +299,19 @@ function render() {
   const fu = document.getElementById("fUpdated"); if (fu && DATES.length) fu.textContent = DATES[DATES.length - 1];
   const ff = document.getElementById("fForms"); if (ff) ff.textContent = new Set(ALL.map(r => r.test_date + "|" + r.job_type)).size;
   const hasLihuo = ALL.some(r => r.job_type === "理貨");
-  const jobs = ["全部", "拆櫃", "拉線", "疊櫃", ...(hasLihuo ? ["理貨"] : [])];
+  const jobs = ["全部", "拆櫃", "拉線", "疊櫃"]; // 理貨為8月模式，僅在「理貨成績」分頁呈現，不列入工種篩選鈕
   let h = "";
-  h += `<div class="tiles">
-    <div class="tile"><div class="k">總測驗人次</div><div class="v">${s.total}</div></div>
-    <div class="tile"><div class="k">受測人數</div><div class="v">${s.people} <small>人</small></div></div>
-    <div class="tile"><div class="k">首測答對率</div><div class="v" style="color:var(--brand)">${pct(s.rightRate)}</div></div>
-    <div class="tile"><div class="k">首測答錯人次</div><div class="v" style="color:var(--warn)">${s.wrong}</div></div>
-  </div>`;
+  // 8月理貨分頁自帶專屬統計卡，不套用 7月工種的總覽數字
+  if (state.view !== "lihuo") {
+    h += `<div class="tiles">
+      <div class="tile"><div class="k">總測驗人次</div><div class="v">${s.total}</div></div>
+      <div class="tile"><div class="k">受測人數</div><div class="v">${s.people} <small>人</small></div></div>
+      <div class="tile"><div class="k">首測答對率</div><div class="v" style="color:var(--brand)">${pct(s.rightRate)}</div></div>
+      <div class="tile"><div class="k">首測答錯人次</div><div class="v" style="color:var(--warn)">${s.wrong}</div></div>
+    </div>`;
 
-  h += `<div class="tilenote">💡 「受測人數」＝實際答題的<b>不重複姓名數</b>；因到工人員跨組安排，一人可能橫跨多個工種，故「總測驗人次」大於「受測人數」屬正常現象。點姓名可看<b>個人詳情</b>。</div>`;
-
-  h += `<div class="note"><div class="noteh"><span>📋 題目正解說明 · 7/16 拆櫃（表單答案曾設錯，已更正）</span>
-    <button class="notebtn" id="noteToggle">${state.openNote ? "收合 ▾" : "展開 ▸"}</button></div>
-    ${state.openNote ? `<div class="body">
-      <div><span class="job">拆櫃</span><span class="qq">外箱凹凸不平，無法平整接觸輸送帶貨件，如何處置比較適合？</span></div>
-      <div style="margin-top:7px">正解：<span class="ans">2.由異常線人工排出</span></div>
-      <p>外箱凹凸不平、無法平整接觸輸送帶的貨件屬「有疑慮貨件」，一旦上到自動化分貨機就有卡件、進而導致機台故障停線的風險，因此應由<b>異常線人工排出</b>、避免它進自動分貨機。惟排出並非無條件——仍須由現場作業人員先判斷該貨件實際上會不會卡在分貨機，確認有卡件風險再進行人工排出，而非一律排出。</p>
-      <p style="color:var(--accent)">※ 當日 Google 表單一度將此題正解設錯，導致 27 人首測 0 分；此為表單設定紕漏、非人員不會，本表已更正為全數答對，故「錯題統整」不會列入此題。</p>
-    </div>` : ""}</div>`;
-
-  h += renderBaseline();
+    h += `<div class="tilenote">💡 「受測人數」＝實際答題的<b>不重複姓名數</b>；因到工人員跨組安排，一人可能橫跨多個工種，故「總測驗人次」大於「受測人數」屬正常現象。點姓名可看<b>個人詳情</b>。</div>`;
+  }
 
   h += `<div class="bar noprint">
     <div class="seg" id="jobSeg">${jobs.map(j => `<button class="${state.job === j ? "on" : ""}" data-job="${j}">${j}</button>`).join("")}</div>
@@ -588,7 +522,7 @@ function renderRank() {
   };
   let h = "";
   if (state.job === "全部") {
-    const present = ["拆櫃", "拉線", "疊櫃", "理貨"].filter(j => ALL.some(r => r.job_type === j && dateOK(r) && companyOK(r)));
+    const present = ["拆櫃", "拉線", "疊櫃"].filter(j => ALL.some(r => r.job_type === j && dateOK(r) && companyOK(r)));
     for (const j of (present.length ? present : ["拆櫃", "拉線", "疊櫃"])) {
       const items = arr.filter(m => m.job === j);
       h += `<div class="card"><h2><span class="job">${j}</span> 常錯題（${items.length} 題有答錯 · 複測題庫）</h2>${tableFor(items)}</div>`;
@@ -802,8 +736,6 @@ function exportCSV() {
 }
 
 function bind() {
-  const blT = document.getElementById("blToggle"); if (blT) blT.onclick = () => { state.openBL = !state.openBL; render(); };
-  const nT = document.getElementById("noteToggle"); if (nT) nT.onclick = () => { state.openNote = !state.openNote; render(); };
   document.querySelectorAll("#jobSeg button").forEach(b => b.onclick = () => { state.job = b.dataset.job; render(); });
   document.querySelectorAll("#viewSeg button").forEach(b => b.onclick = () => { state.view = b.dataset.view; render(); });
   document.querySelectorAll(".nameL").forEach(el => el.onclick = () => openPerson(el.dataset.person));
