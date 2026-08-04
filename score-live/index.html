@@ -37,6 +37,9 @@
   .seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
   .seg button{border:0;background:transparent;color:var(--muted);padding:7px 13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
   .seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+  .seg-main{padding:4px;gap:4px;margin-bottom:4px}
+  .seg-main button{padding:11px 20px;font-size:15px;border:1.5px solid transparent}
+  .seg-main button.on{background:var(--card);color:var(--brand);box-shadow:var(--shadow);border-color:var(--brand)}
   input[type=search]{flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);color:var(--ink);
     border-radius:10px;padding:9px 12px;font-size:14px}
   select{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 10px;font-size:13px}
@@ -178,7 +181,7 @@ const TOKEN = new URLSearchParams(location.search).get("k") || "";
 let ALL = [];      // all records
 let RETEST = [];   // retest_records（複測制，主管建議#2）
 let DATES = [];    // distinct sorted dates
-let state = { job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, company: "全部", year: "全部", month: "全部", openBL: false, openNote: false };
+let state = { mode: "july", job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, company: "全部", year: "全部", month: "全部" };
 
 const dateOK = r => (!state.from || r.test_date >= state.from) && (!state.to || r.test_date <= state.to);
 // 7月模式（拆/拉/疊 每日單題）與 8月模式（理貨 合併三題）分流：
@@ -186,6 +189,9 @@ const dateOK = r => (!state.from || r.test_date >= state.from) && (!state.to || 
 const jobOK = r => r.job_type !== "理貨" && (state.job === "全部" || r.job_type === state.job);
 const qOK = r => { if (!state.q) return true; const q = state.q.trim(); return r.name.includes(q) || (r.emp_id || "").includes(q); };
 const companyOK = r => state.company === "全部" || companyOf(r.emp_id) === state.company;
+// 各主模式的日期池：7月＝拆/拉/疊 每日單題；8月＝理貨（8月開始實施）。用工種歸屬取日期，不寫死界線
+const modeDates = () => [...new Set(ALL.filter(r => state.mode === "august" ? r.job_type === "理貨" : r.job_type !== "理貨").map(r => r.test_date))].sort();
+function resetRange() { const ds = modeDates(); state.year = "全部"; state.month = "全部"; state.from = ds[0]; state.to = ds[ds.length - 1]; }
 
 // ---- theme ----
 document.getElementById("themeBtn").onclick = () => {
@@ -294,48 +300,38 @@ const companyOf = emp => { emp = (emp || "").trim(); if (emp.length > 8) return 
 
 function render() {
   const s = stats();
+  const md = modeDates();
+  const hasLihuo = ALL.some(r => r.job_type === "理貨");
+  const jobs = ["全部", "拆櫃", "拉線", "疊櫃"];
   const sub = document.getElementById("subLine");
-  if (sub && DATES.length) sub.textContent = `人員教育訓練成績管理　${DATES[0].replace(/-/g, "/")}–${DATES[DATES.length - 1].slice(5).replace("-", "/")}　拆櫃 · 拉線 · 疊櫃`;
+  if (sub) sub.textContent = state.mode === "august"
+    ? `理貨成績（8月開始實施）　${md.length ? md[0].replace(/-/g, "/") + " 起" : ""}`
+    : `7月份資料分析　${md.length ? md[0].replace(/-/g, "/") + "–" + md[md.length - 1].slice(5).replace("-", "/") : ""}　拆櫃 · 拉線 · 疊櫃`;
   const fu = document.getElementById("fUpdated"); if (fu && DATES.length) fu.textContent = DATES[DATES.length - 1];
   const ff = document.getElementById("fForms"); if (ff) ff.textContent = new Set(ALL.map(r => r.test_date + "|" + r.job_type)).size;
-  const hasLihuo = ALL.some(r => r.job_type === "理貨");
-  const jobs = ["全部", "拆櫃", "拉線", "疊櫃"]; // 理貨為8月模式，僅在「理貨成績」分頁呈現，不列入工種篩選鈕
+
   let h = "";
-  // 8月理貨分頁自帶專屬統計卡，不套用 7月工種的總覽數字
-  if (state.view !== "lihuo") {
-    h += `<div class="tiles">
-      <div class="tile"><div class="k">總測驗人次</div><div class="v">${s.total}</div></div>
-      <div class="tile"><div class="k">受測人數</div><div class="v">${s.people} <small>人</small></div></div>
-      <div class="tile"><div class="k">首測答對率</div><div class="v" style="color:var(--brand)">${pct(s.rightRate)}</div></div>
-      <div class="tile"><div class="k">首測答錯人次</div><div class="v" style="color:var(--warn)">${s.wrong}</div></div>
-    </div>`;
-
-    h += `<div class="tilenote">💡 「受測人數」＝實際答題的<b>不重複姓名數</b>；因到工人員跨組安排，一人可能橫跨多個工種，故「總測驗人次」大於「受測人數」屬正常現象。點姓名可看<b>個人詳情</b>。</div>`;
-  }
-
+  // === 主模式列：7月份資料分析 / 理貨成績（8月開始實施）===
   h += `<div class="bar noprint">
-    <div class="seg" id="jobSeg">${jobs.map(j => `<button class="${state.job === j ? "on" : ""}" data-job="${j}">${j}</button>`).join("")}</div>
-    <div class="seg" id="viewSeg">
-      <button class="${state.view === "people" ? "on" : ""}" data-view="people">人員成績表</button>
-      ${hasLihuo ? `<button class="${state.view === "lihuo" ? "on" : ""}" data-view="lihuo">理貨成績（8月開始實施）</button>` : ""}
-      <button class="${state.view === "wrong" ? "on" : ""}" data-view="wrong">錯題統整</button>
-      <button class="${state.view === "rank" ? "on" : ""}" data-view="rank">常錯題排行</button>
-      <button class="${state.view === "retest" ? "on" : ""}" data-view="retest">複測追蹤</button>
-      <button class="${state.view === "daily" ? "on" : ""}" data-view="daily">逐日總覽</button>
+    <div class="seg seg-main" id="modeSeg">
+      <button class="${state.mode === "july" ? "on" : ""}" data-mode="july">📊 7月份資料分析</button>
+      ${hasLihuo ? `<button class="${state.mode === "august" ? "on" : ""}" data-mode="august">📦 理貨成績（8月開始實施）</button>` : ""}
     </div>
-    <input type="search" id="q" placeholder="🔍 搜尋姓名或工號" value="${esc(state.q)}">
   </div>`;
 
-  const scoped = DATES.filter(d => (state.year === "全部" || d.slice(0, 4) === state.year) && (state.month === "全部" || d.slice(5, 7) === state.month));
+  // === 篩選列：日期池依當前模式（7月只給 7/1–7/31、8月只給 8月起）===
+  const scoped = md.filter(d => (state.year === "全部" || d.slice(0, 4) === state.year) && (state.month === "全部" || d.slice(5, 7) === state.month));
   const dopt = (sel) => scoped.map(d => `<option value="${d}" ${d === sel ? "selected" : ""}>${d.slice(5)}</option>`).join("");
-  const years = ["全部", ...[...new Set(DATES.map(d => d.slice(0, 4)))].sort()];
+  const years = ["全部", ...[...new Set(md.map(d => d.slice(0, 4)))].sort()];
   const yearOpts = years.map(y => `<option value="${y}" ${y === state.year ? "selected" : ""}>${y === "全部" ? "全部年" : y + "年"}</option>`).join("");
-  const months = ["全部", ...[...new Set(DATES.filter(d => state.year === "全部" || d.slice(0, 4) === state.year).map(d => d.slice(5, 7)))].sort()];
+  const months = ["全部", ...[...new Set(md.filter(d => state.year === "全部" || d.slice(0, 4) === state.year).map(d => d.slice(5, 7)))].sort()];
   const monthOpts = months.map(m => `<option value="${m}" ${m === state.month ? "selected" : ""}>${m === "全部" ? "全部月" : (+m) + "月"}</option>`).join("");
   const COMP_ORDER = ["信林", "有根", "丞閎", "新竹物流正職", "其他"];
   const compsPresent = ["全部", ...COMP_ORDER.filter(c => ALL.some(r => companyOf(r.emp_id) === c))];
   const compOpts = compsPresent.map(c => `<option value="${c}" ${c === state.company ? "selected" : ""}>${c}</option>`).join("");
-  h += `<div class="bar noprint" style="margin-top:-6px">
+  const isFiltered = md.length && (state.from !== md[0] || state.to !== md[md.length - 1]);
+  const searchBox = `<input type="search" id="q" placeholder="🔍 搜尋姓名或工號" value="${esc(state.q)}">`;
+  const filterBar = `<div class="bar noprint" style="margin-top:-6px">
     <span class="fgrp"><span class="flbl">🏢 人力公司</span>
       <select id="compSel">${compOpts}</select>
       ${state.company !== "全部" ? `<span style="color:var(--accent);font-size:12px;font-weight:700">僅 ${state.company}</span>` : ""}</span>
@@ -344,15 +340,42 @@ function render() {
       <select id="mSel">${monthOpts}</select>
       <span class="frange"><select id="dFrom">${dopt(state.from)}</select><span style="color:var(--muted)">–</span><select id="dTo">${dopt(state.to)}</select></span>
       <button class="theme-btn" id="dReset">全部</button>
-      ${(state.from !== DATES[0] || state.to !== DATES[DATES.length-1]) ? `<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${state.from.slice(5)}~${state.to.slice(5)}</span>` : ""}</span>
+      ${isFiltered ? `<span style="color:var(--accent);font-size:12px;font-weight:700">已篩選 ${state.from.slice(5)}~${state.to.slice(5)}</span>` : ""}</span>
   </div>`;
 
-  if (state.view === "people") h += renderPeople();
-  else if (state.view === "lihuo") h += renderLihuo();
-  else if (state.view === "wrong") h += renderWrong();
-  else if (state.view === "rank") h += renderRank();
-  else if (state.view === "retest") h += renderRetest();
-  else h += renderDaily();
+  if (state.mode === "august") {
+    // === 8月理貨：獨立主視圖（自帶統計卡）===
+    h += `<div class="bar noprint">${searchBox}</div>`;
+    h += filterBar;
+    h += renderLihuo();
+  } else {
+    // === 7月份資料分析：拆/拉/疊 各分頁 ===
+    h += `<div class="tiles">
+      <div class="tile"><div class="k">總測驗人次</div><div class="v">${s.total}</div></div>
+      <div class="tile"><div class="k">受測人數</div><div class="v">${s.people} <small>人</small></div></div>
+      <div class="tile"><div class="k">首測答對率</div><div class="v" style="color:var(--brand)">${pct(s.rightRate)}</div></div>
+      <div class="tile"><div class="k">首測答錯人次</div><div class="v" style="color:var(--warn)">${s.wrong}</div></div>
+    </div>`;
+    h += `<div class="tilenote">💡 「受測人數」＝實際答題的<b>不重複姓名數</b>；因到工人員跨組安排，一人可能橫跨多個工種，故「總測驗人次」大於「受測人數」屬正常現象。點姓名可看<b>個人詳情</b>。</div>`;
+    h += `<div class="bar noprint">
+      <div class="seg" id="jobSeg">${jobs.map(j => `<button class="${state.job === j ? "on" : ""}" data-job="${j}">${j}</button>`).join("")}</div>
+      <div class="seg" id="viewSeg">
+        <button class="${state.view === "people" ? "on" : ""}" data-view="people">人員成績表</button>
+        <button class="${state.view === "wrong" ? "on" : ""}" data-view="wrong">錯題統整</button>
+        <button class="${state.view === "rank" ? "on" : ""}" data-view="rank">常錯題排行</button>
+        <button class="${state.view === "retest" ? "on" : ""}" data-view="retest">複測追蹤</button>
+        <button class="${state.view === "daily" ? "on" : ""}" data-view="daily">逐日總覽</button>
+      </div>
+      ${searchBox}
+    </div>`;
+    h += filterBar;
+
+    if (state.view === "people") h += renderPeople();
+    else if (state.view === "wrong") h += renderWrong();
+    else if (state.view === "rank") h += renderRank();
+    else if (state.view === "retest") h += renderRetest();
+    else h += renderDaily();
+  }
 
   document.getElementById("app").innerHTML = h;
   document.getElementById("fCount").textContent = ALL.length;
@@ -736,6 +759,9 @@ function exportCSV() {
 }
 
 function bind() {
+  document.querySelectorAll("#modeSeg button").forEach(b => b.onclick = () => {
+    state.mode = b.dataset.mode; state.q = ""; state.company = "全部"; resetRange(); render();
+  });
   document.querySelectorAll("#jobSeg button").forEach(b => b.onclick = () => { state.job = b.dataset.job; render(); });
   document.querySelectorAll("#viewSeg button").forEach(b => b.onclick = () => { state.view = b.dataset.view; render(); });
   document.querySelectorAll(".nameL").forEach(el => el.onclick = () => openPerson(el.dataset.person));
@@ -756,14 +782,14 @@ function bind() {
   if (dTo) dTo.onchange = () => { state.to = dTo.value; if (state.from > state.to) state.from = state.to; render(); };
   const ySel = document.getElementById("ySel");
   if (ySel) ySel.onchange = () => { state.year = ySel.value; state.month = "全部";
-    const ds = DATES.filter(d => state.year === "全部" || d.slice(0, 4) === state.year);
+    const ds = modeDates().filter(d => state.year === "全部" || d.slice(0, 4) === state.year);
     state.from = ds[0]; state.to = ds[ds.length - 1]; render(); };
   const mSel = document.getElementById("mSel");
   if (mSel) mSel.onchange = () => { state.month = mSel.value;
-    const ds = DATES.filter(d => (state.year === "全部" || d.slice(0, 4) === state.year) && (state.month === "全部" || d.slice(5, 7) === state.month));
+    const ds = modeDates().filter(d => (state.year === "全部" || d.slice(0, 4) === state.year) && (state.month === "全部" || d.slice(5, 7) === state.month));
     state.from = ds[0]; state.to = ds[ds.length - 1]; render(); };
   const dReset = document.getElementById("dReset");
-  if (dReset) dReset.onclick = () => { state.year = "全部"; state.month = "全部"; state.from = DATES[0]; state.to = DATES[DATES.length - 1]; render(); };
+  if (dReset) dReset.onclick = () => { resetRange(); render(); };
   const compSel = document.getElementById("compSel");
   if (compSel) compSel.onchange = () => { state.company = compSel.value; render(); };
   document.querySelectorAll("th[data-sort]").forEach(th => th.onclick = () => {
@@ -784,7 +810,8 @@ function bind() {
     ALL = Array.isArray(data.rows) ? data.rows : [];
     RETEST = Array.isArray(data.retest) ? data.retest : [];
     DATES = [...new Set(ALL.map(r => r.test_date))].sort();
-    state.from = DATES[0]; state.to = DATES[DATES.length - 1];
+    state.mode = ALL.some(r => r.job_type !== "理貨") ? "july" : "august";
+    resetRange();
     render();
   }
   catch (e) { app.innerHTML = `<div class="empty">❌ ${esc(e.message)}</div>`; }
