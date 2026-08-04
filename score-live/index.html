@@ -37,9 +37,9 @@
   .seg{display:inline-flex;background:var(--chip);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
   .seg button{border:0;background:transparent;color:var(--muted);padding:7px 13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
   .seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
-  .seg-main{padding:4px;gap:4px;margin-bottom:4px}
-  .seg-main button{padding:11px 20px;font-size:15px;border:1.5px solid transparent}
-  .seg-main button.on{background:var(--card);color:var(--brand);box-shadow:var(--shadow);border-color:var(--brand)}
+  .seg-main{background:transparent;padding:0;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .seg-main button{padding:11px 20px;font-size:15px;border:1.5px solid var(--line);background:var(--card);border-radius:12px;box-shadow:var(--shadow);color:var(--muted)}
+  .seg-main button.on{background:var(--okbg);color:var(--brand);border-color:var(--brand);font-weight:800}
   input[type=search]{flex:1;min-width:180px;background:var(--card);border:1px solid var(--line);color:var(--ink);
     border-radius:10px;padding:9px 12px;font-size:14px}
   select{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 10px;font-size:13px}
@@ -147,8 +147,8 @@
     .tile .v{font-size:21px}
     .tile .v small{font-size:11px}
     /* 主模式鈕：整寬等寬堆疊，好點按、不再參差 */
-    .seg-main{display:flex;flex-direction:column;width:100%;gap:6px}
-    .seg-main button{width:100%;text-align:center;padding:12px 8px;font-size:14px}
+    .seg-main{display:flex;flex-direction:column;width:100%;gap:8px}
+    .seg-main button{width:100%;text-align:center;padding:13px 8px;font-size:14px}
     /* 導覽／篩選列 */
     .bar{gap:7px;margin-bottom:11px}
     .seg{width:100%}
