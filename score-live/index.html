@@ -181,7 +181,7 @@ const TOKEN = new URLSearchParams(location.search).get("k") || "";
 let ALL = [];      // all records
 let RETEST = [];   // retest_records（複測制，主管建議#2）
 let DATES = [];    // distinct sorted dates
-let state = { mode: "july", job: "全部", view: "people", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, company: "全部", year: "全部", month: "全部" };
+let state = { mode: "july", job: "全部", view: "people", aview: "overview", q: "", from: "", to: "", sortKey: "wrongRate", sortDir: -1, company: "全部", year: "全部", month: "全部" };
 
 const dateOK = r => (!state.from || r.test_date >= state.from) && (!state.to || r.test_date <= state.to);
 // 7月模式（拆/拉/疊 每日單題）與 8月模式（理貨 合併三題）分流：
@@ -344,8 +344,12 @@ function render() {
   </div>`;
 
   if (state.mode === "august") {
-    // === 8月理貨：獨立主視圖（自帶統計卡）===
-    h += `<div class="bar noprint">${searchBox}</div>`;
+    // === 8月理貨：獨立主視圖（子頁籤：總覽/逐題/公司/趨勢/分布）===
+    const aviews = [["overview", "成績總覽"], ["perq", "逐題弱點"], ["company", "人力公司對比"], ["trend", "每日趨勢"], ["dist", "分數分布 · 待追蹤"]];
+    h += `<div class="bar noprint">
+      <div class="seg" id="aviewSeg">${aviews.map(([v, l]) => `<button class="${state.aview === v ? "on" : ""}" data-aview="${v}">${l}</button>`).join("")}</div>
+      ${searchBox}
+    </div>`;
     h += filterBar;
     h += renderLihuo();
   } else {
@@ -413,33 +417,46 @@ function renderPeople() {
   return h;
 }
 
-// ---- 理貨成績（8月合併三題）：首測分數＋補測後最高分 ----
+// ---- 理貨成績（8月合併三題）分析 ----
+const LIHUO_W = { 1: 40, 2: 30, 3: 30 };            // 各題配分（依 Q1/Q2/Q3 題序）
+const lhBest = r => (r.best_score == null ? r.first_score : r.best_score);
+const lihuoBase = () => ALL.filter(r => r.job_type === "理貨" && dateOK(r) && companyOK(r) && qOK(r));
 function lihuoRows() {
-  return ALL.filter(r => r.job_type === "理貨" && dateOK(r) && companyOK(r) && qOK(r))
-    .sort((a, b) => a.test_date.localeCompare(b.test_date)
-      || (a.first_score - b.first_score)
-      || a.name.localeCompare(b.name, "zh-Hant"));
+  return lihuoBase().sort((a, b) => a.test_date.localeCompare(b.test_date)
+    || (a.first_score - b.first_score) || a.name.localeCompare(b.name, "zh-Hant"));
 }
+
+// 子頁籤分派
 function renderLihuo() {
+  if (state.aview === "perq") return lihuoPerQ();
+  if (state.aview === "company") return lihuoCompany();
+  if (state.aview === "trend") return lihuoTrend();
+  if (state.aview === "dist") return lihuoDist();
+  return lihuoOverview();
+}
+
+// —— 成績總覽：統計卡 + 明細表 ——
+function lihuoOverview() {
   const rows = lihuoRows();
   const n = rows.length;
-  const bestOf = r => (r.best_score == null ? r.first_score : r.best_score);
   const perfect = rows.filter(r => r.first_score >= 100).length;
-  const fixed = rows.filter(r => r.first_score < 100 && bestOf(r) >= 100).length;
-  const still = rows.filter(r => bestOf(r) < 100).length;
+  const fixed = rows.filter(r => r.first_score < 100 && lhBest(r) >= 100).length;
+  const still = rows.filter(r => lhBest(r) < 100).length;
+  const avgFirst = n ? rows.reduce((a, r) => a + (r.first_score ?? 0), 0) / n : 0;
   let h = `<div class="tiles">
     <div class="tile"><div class="k">理貨測驗人次</div><div class="v">${n}</div></div>
-    <div class="tile"><div class="k">首測即滿分</div><div class="v" style="color:var(--brand)">${perfect}</div></div>
+    <div class="tile"><div class="k">首測平均分</div><div class="v" style="color:var(--brand)">${avgFirst.toFixed(1)}</div></div>
+    <div class="tile"><div class="k">首測即滿分</div><div class="v" style="color:var(--brand)">${perfect} <small>／${n}</small></div></div>
     <div class="tile"><div class="k">靠補測達標</div><div class="v" style="color:var(--accent)">${fixed}</div></div>
     <div class="tile"><div class="k">仍未達滿分</div><div class="v" style="color:var(--warn)">${still}</div></div>
   </div>`;
-  h += `<div class="tilenote">💡 八月起表單整併為<b>一份「理貨人員」三題</b>（Q1輪胎40分／Q2空棧板30分／Q3跨越板30分，滿分100）。<b>首測分數</b>＝當日最早一次；<b>補測後最高分</b>＝當天重測後的最高分。狀態：<b style="color:var(--brand)">綠</b>＝首測即滿分、<b style="color:var(--accent)">藍</b>＝首測未滿但補測後達標、<b style="color:var(--warn)">紅</b>＝仍未達滿分。點姓名看逐題詳情。</div>`;
+  h += `<div class="tilenote">💡 八月起表單整併為<b>一份「理貨人員」三題</b>，三題合計滿分100（Q1配40、Q2配30、Q3配30）。<b>首測分數</b>＝當日最早一次；<b>補測後最高分</b>＝當天重測後的最高分。狀態：<b style="color:var(--brand)">綠</b>＝首測即滿分、<b style="color:var(--accent)">藍</b>＝首測未滿但補測後達標、<b style="color:var(--warn)">紅</b>＝仍未達滿分。點姓名看逐題詳情；上方分頁可看逐題弱點、公司對比、每日趨勢與分數分布。</div>`;
   h += `<div class="card"><h2>理貨人員成績（${n} 筆 · 首測分數＋補測後最高分）</h2><div class="tblwrap"><table><thead><tr>
     <th>姓名</th><th>工號</th><th>人力公司</th><th>日期</th><th class="num">首測分數</th><th class="num">補測後最高分</th><th class="num">作答次數</th><th>狀態</th>
   </tr></thead><tbody>`;
   if (!n) h += `<tr><td colspan="8" class="empty">此範圍內沒有理貨資料</td></tr>`;
   for (const r of rows) {
-    const f = r.first_score, bs = bestOf(r);
+    const f = r.first_score, bs = lhBest(r);
     const status = f >= 100 ? `<span class="pill ok">首測滿分</span>`
       : (bs >= 100 ? `<span class="pill ok">補測後達標</span>`
                    : `<span class="pill warn">仍未達滿分</span>`);
@@ -457,6 +474,145 @@ function renderLihuo() {
       <td class="num">${r.submissions ?? "—"}</td>
       <td>${status}</td>
     </tr>`;
+  }
+  h += `</tbody></table></div></div>`;
+  return h;
+}
+
+// —— 逐題弱點：依 Q1/Q2/Q3 題序彙整首測答錯率 ——
+function lihuoPerQ() {
+  const rows = lihuoBase();
+  const pos = { 1: { wrong: 0, total: 0, qs: new Map() }, 2: { wrong: 0, total: 0, qs: new Map() }, 3: { wrong: 0, total: 0, qs: new Map() } };
+  for (const r of rows) for (const a of (Array.isArray(r.answers) ? r.answers : [])) {
+    const p = pos[a.n]; if (!p) continue;
+    p.total++; if (a.w) p.wrong++;
+    let m = p.qs.get(a.q); if (!m) { m = { q: a.q, wrong: 0, total: 0, correct: "" }; p.qs.set(a.q, m); }
+    m.total++; if (a.w) m.wrong++; else if (a.c && !m.correct) m.correct = a.c;
+  }
+  const items = [1, 2, 3].map(nn => ({ n: nn, ...pos[nn], rate: pos[nn].total ? pos[nn].wrong / pos[nn].total : 0 }))
+    .filter(x => x.total > 0).sort((a, b) => b.rate - a.rate);   // 最弱在上
+  if (!items.length) return `<div class="card"><div class="empty" style="padding:30px">此範圍內沒有理貨作答資料</div></div>`;
+  let h = `<div class="card"><h2>逐題弱點分析 <span class="h2note">依 Q1/Q2/Q3 題序彙整首測答錯率（配分 40/30/30，弱點在上）</span></h2><div style="padding:6px 16px 16px">`;
+  for (const it of items) {
+    const col = it.rate >= 0.15 ? "var(--warn)" : it.rate >= 0.05 ? "var(--accent)" : "var(--brand)";
+    const w = Math.min(it.rate, 1) * 100;
+    h += `<div style="margin:14px 0 6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <b style="font-size:15px">Q${it.n}</b><span class="pill mut">配分 ${LIHUO_W[it.n]}</span>
+      <span class="achbar" style="width:160px"><i style="width:${w.toFixed(0)}%;background:${col}"></i></span>
+      <b style="color:${col}">答錯率 ${pct(it.rate)}</b>
+      <span style="color:var(--muted);font-size:12px">（首測答錯 ${it.wrong} / ${it.total} 人次）</span></div>`;
+    const qs = [...it.qs.values()].sort((a, b) => (b.wrong / b.total) - (a.wrong / a.total));
+    for (const m of qs) {
+      const mr = m.total ? m.wrong / m.total : 0;
+      h += `<div style="padding:5px 0 5px 14px;border-left:2px solid var(--line);margin:0 0 4px 4px;font-size:13px">
+        <div style="color:var(--ink);font-weight:600">${esc(m.q)}</div>
+        <div style="color:var(--muted);font-size:12px">答錯 ${m.wrong}/${m.total}（${pct(mr)}）${m.correct ? `　正解：<span style="color:var(--brand);font-weight:700">${esc(m.correct)}</span>` : ""}</div>
+      </div>`;
+    }
+  }
+  h += `</div></div>`;
+  return h;
+}
+
+// —— 人力公司對比 ——
+function lihuoCompany() {
+  const rows = lihuoBase();
+  const ORD = ["信林", "有根", "丞閎", "新竹物流正職", "其他"];
+  const map = new Map();
+  for (const r of rows) {
+    const c = companyOf(r.emp_id);
+    let m = map.get(c); if (!m) { m = { c, n: 0, names: new Set(), sumFirst: 0, perfect: 0, pass: 0, still: 0 }; map.set(c, m); }
+    m.n++; m.names.add(r.name); m.sumFirst += (r.first_score ?? 0);
+    if (r.first_score >= 100) m.perfect++;
+    if (lhBest(r) >= 100) m.pass++; else m.still++;
+  }
+  const arr = [...map.values()].map(m => ({ ...m, people: m.names.size, avg: m.n ? m.sumFirst / m.n : 0,
+    perfectRate: m.n ? m.perfect / m.n : 0, passRate: m.n ? m.pass / m.n : 0 }))
+    .sort((a, b) => (ORD.indexOf(a.c) + 9) % 100 - (ORD.indexOf(b.c) + 9) % 100);
+  if (!arr.length) return `<div class="card"><div class="empty" style="padding:30px">此範圍內沒有理貨資料</div></div>`;
+  let h = `<div class="card"><h2>人力公司對比 <span class="h2note">各公司首測平均分、達標率與待追蹤人數</span></h2><div class="tblwrap"><table class="bl"><thead><tr>
+    <th>人力公司</th><th>受測人次</th><th>受測人數</th><th>首測平均分</th><th>首測滿分率</th><th style="text-align:left">達標率(補測後)</th><th>仍未達滿分</th>
+  </tr></thead><tbody>`;
+  for (const m of arr) {
+    const col = m.passRate >= 0.95 ? "var(--brand)" : m.passRate >= 0.8 ? "var(--accent)" : "var(--warn)";
+    h += `<tr class="jobrow"><td>${m.c}</td><td>${m.n}</td><td>${m.people}</td>
+      <td>${m.avg.toFixed(1)}</td><td>${pct(m.perfectRate)}</td>
+      <td style="text-align:left"><span class="achbar"><i style="width:${(m.passRate*100).toFixed(0)}%;background:${col}"></i></span><b style="color:${col}">${pct(m.passRate)}</b></td>
+      <td>${m.still ? `<span class="pill warn">${m.still}</span>` : "0"}</td></tr>`;
+  }
+  const T = arr.reduce((o, m) => { o.n += m.n; o.perfect += m.perfect; o.pass += m.pass; o.still += m.still; o.sumFirst += m.sumFirst; m.names.forEach(x => o.names.add(x)); return o; }, { n: 0, perfect: 0, pass: 0, still: 0, sumFirst: 0, names: new Set() });
+  h += `<tr style="border-top:2px solid var(--line)"><td style="font-weight:800">合計</td><td>${T.n}</td><td>${T.names.size}</td>
+    <td>${T.n ? (T.sumFirst / T.n).toFixed(1) : "0"}</td><td>${T.n ? pct(T.perfect / T.n) : "0%"}</td>
+    <td style="text-align:left"><b>${T.n ? pct(T.pass / T.n) : "0%"}</b></td><td>${T.still || 0}</td></tr>`;
+  h += `</tbody></table></div>
+    <div class="rank-no">※「受測人次」含同一人多日重複；「受測人數」為不重複姓名。人力公司依工號開頭：10＝有根、20＝丞閎、30＝信林、00＝新竹物流正職。</div></div>`;
+  return h;
+}
+
+// —— 每日趨勢 ——
+function lihuoTrend() {
+  const rows = lihuoBase();
+  const map = new Map();
+  for (const r of rows) {
+    let d = map.get(r.test_date); if (!d) { d = { date: r.test_date, n: 0, sumFirst: 0, perfect: 0, pass: 0 }; map.set(r.test_date, d); }
+    d.n++; d.sumFirst += (r.first_score ?? 0); if (r.first_score >= 100) d.perfect++; if (lhBest(r) >= 100) d.pass++;
+  }
+  const arr = [...map.values()].sort((a, b) => a.date.localeCompare(b.date))
+    .map(d => ({ ...d, avg: d.n ? d.sumFirst / d.n : 0, perfectRate: d.n ? d.perfect / d.n : 0, passRate: d.n ? d.pass / d.n : 0 }));
+  if (!arr.length) return `<div class="card"><div class="empty" style="padding:30px">此範圍內沒有理貨資料</div></div>`;
+  const bars = arr.map(d => {
+    const col = d.avg >= 95 ? "var(--brand2)" : d.avg >= 80 ? "var(--accent)" : "var(--warn)";
+    const mm = +d.date.slice(5, 7), dd = +d.date.slice(8, 10);
+    return `<div class="cbar" title="${d.date}　首測平均 ${d.avg.toFixed(1)} 分／首測滿分率 ${pct(d.perfectRate)}（${d.n} 人次）">
+      <div class="cbar-track"><i style="height:${Math.round(d.avg)}%;background:${col}"></i></div>
+      <div class="cbar-val">${d.avg.toFixed(0)}</div><div class="cbar-x">${mm}/${dd}</div></div>`;
+  }).join("");
+  let h = `<div class="card"><h2>📈 每日首測平均分 <span class="h2note">柱高＝當日首測平均分（0–100）；綠≥95、藍≥80、紅<80</span></h2><div class="chart">${bars}</div></div>`;
+  h += `<div class="card"><h2>逐日理貨成效</h2><div class="tblwrap"><table><thead><tr>
+    <th>日期</th><th class="num">受測人次</th><th class="num">首測平均分</th><th class="num">首測滿分率</th><th class="num">達標率(補測後)</th></tr></thead><tbody>`;
+  for (const d of arr) {
+    h += `<tr><td>${esc(d.date)}</td><td class="num">${d.n}</td><td class="num">${d.avg.toFixed(1)}</td>
+      <td class="num"><span class="rate">${pct(d.perfectRate)}</span> <span class="mini"><i style="width:${(d.perfectRate*100).toFixed(0)}%"></i></span></td>
+      <td class="num"><span class="rate">${pct(d.passRate)}</span></td></tr>`;
+  }
+  h += `</tbody></table></div></div>`;
+  return h;
+}
+
+// —— 分數分布 + 待追蹤名單 ——
+function lihuoDist() {
+  const rows = lihuoBase();
+  if (!rows.length) return `<div class="card"><div class="empty" style="padding:30px">此範圍內沒有理貨資料</div></div>`;
+  const bucket = new Map();
+  for (const r of rows) bucket.set(r.first_score, (bucket.get(r.first_score) || 0) + 1);
+  const scores = [...bucket.keys()].sort((a, b) => b - a);
+  const maxN = Math.max(...bucket.values());
+  let h = `<div class="card"><h2>首測分數分布 <span class="h2note">共 ${rows.length} 人次；綠＝滿分、藍＝70+、紅＜70</span></h2><div style="padding:12px 16px 16px">`;
+  for (const sc of scores) {
+    const cnt = bucket.get(sc), w = maxN ? cnt / maxN * 100 : 0;
+    const col = sc >= 100 ? "var(--brand)" : sc >= 70 ? "var(--accent)" : "var(--warn)";
+    h += `<div style="display:flex;align-items:center;gap:10px;margin:8px 0">
+      <b style="width:48px;text-align:right;color:${col}">${sc}分</b>
+      <span style="flex:1;background:var(--chip);border-radius:6px;overflow:hidden;height:20px;min-width:110px">
+        <i style="display:block;height:100%;width:${w.toFixed(0)}%;background:${col};border-radius:6px"></i></span>
+      <span style="width:104px;color:var(--muted);font-size:12px">${cnt} 人次（${pct(cnt / rows.length)}）</span></div>`;
+  }
+  h += `</div></div>`;
+  const pending = rows.filter(r => lhBest(r) < 100)
+    .sort((a, b) => lhBest(a) - lhBest(b) || a.test_date.localeCompare(b.test_date) || a.name.localeCompare(b.name, "zh-Hant"));
+  h += `<div class="card"><h2>🔴 待追蹤名單 <span class="h2note">補測後最高分仍未達滿分，需優先教導複測（${pending.length} 人次）</span></h2>`;
+  if (!pending.length) { h += `<div class="empty" style="padding:24px">此範圍內全員已達滿分 🎉</div></div>`; return h; }
+  h += `<div class="tblwrap"><table><thead><tr>
+    <th>姓名</th><th>工號</th><th>人力公司</th><th>日期</th><th class="num">首測</th><th class="num">最高分</th><th>首測答錯題</th></tr></thead><tbody>`;
+  for (const r of pending) {
+    const wrongQs = (Array.isArray(r.answers) ? r.answers : []).filter(a => a.w).map(a => "Q" + a.n).join("、");
+    h += `<tr>
+      <td>${nameLink(r.name)}</td><td style="color:var(--muted)">${esc(r.emp_id)}</td>
+      <td style="color:var(--muted);font-size:12px">${companyOf(r.emp_id)}</td>
+      <td class="mdate">${d2(r.test_date)}</td>
+      <td class="num"><span style="color:var(--warn);font-weight:800">${r.first_score}</span></td>
+      <td class="num"><b>${lhBest(r)}</b></td>
+      <td style="color:var(--warn);font-size:12px">${wrongQs || "—"}</td></tr>`;
   }
   h += `</tbody></table></div></div>`;
   return h;
@@ -764,6 +920,7 @@ function bind() {
   });
   document.querySelectorAll("#jobSeg button").forEach(b => b.onclick = () => { state.job = b.dataset.job; render(); });
   document.querySelectorAll("#viewSeg button").forEach(b => b.onclick = () => { state.view = b.dataset.view; render(); });
+  document.querySelectorAll("#aviewSeg button").forEach(b => b.onclick = () => { state.aview = b.dataset.aview; render(); });
   document.querySelectorAll(".nameL").forEach(el => el.onclick = () => openPerson(el.dataset.person));
   const q = document.getElementById("q");
   if (q) {
