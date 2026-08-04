@@ -134,6 +134,46 @@
   .spin{display:inline-block;width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:s .8s linear infinite;vertical-align:-4px;margin-right:8px}
   @keyframes s{to{transform:rotate(360deg)}}
   .hide{display:none}
+  /* 手機端優化（≤640px） */
+  @media (max-width:640px){
+    .wrap{padding:14px 12px 44px}
+    header.top{gap:8px;margin-bottom:4px}
+    h1{font-size:17px;letter-spacing:0}
+    .sub{font-size:12px;margin:2px 0 12px;line-height:1.45}
+    .toolbtns .theme-btn{padding:6px 9px;font-size:12px}
+    .tiles{grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px}
+    .tile{padding:11px 12px;border-radius:12px}
+    .tile .k{font-size:11px}
+    .tile .v{font-size:21px}
+    .tile .v small{font-size:11px}
+    /* 主模式鈕：整寬等寬堆疊，好點按、不再參差 */
+    .seg-main{display:flex;flex-direction:column;width:100%;gap:6px}
+    .seg-main button{width:100%;text-align:center;padding:12px 8px;font-size:14px}
+    /* 導覽／篩選列 */
+    .bar{gap:7px;margin-bottom:11px}
+    .seg{width:100%}
+    .seg button{padding:7px 11px;font-size:12.5px;flex:1 1 auto;text-align:center;white-space:nowrap}
+    input[type=search]{flex:1 1 100%;min-width:0;font-size:13px;padding:9px 11px}
+    .fgrp{width:100%;gap:6px 8px}
+    .flbl{flex:0 0 100%;margin-bottom:-2px}
+    .frange{flex:1 1 auto}
+    select{flex:1 1 auto;min-width:0;font-size:12.5px;padding:8px 9px}
+    .card{border-radius:12px;margin-bottom:14px}
+    .card h2{font-size:14px;padding:11px 13px;gap:6px}
+    .card h2 .h2note{font-size:11px;width:100%}
+    th,td{padding:8px 10px;font-size:12.5px}
+    .bl th,.bl td{padding:7px 8px;font-size:12px}
+    .tilenote{font-size:11.5px;margin:-6px 0 14px}
+    .foot{font-size:11px}
+    .chart{padding:14px 10px 30px;gap:5px;min-height:150px}
+    .cbar{min-width:22px}
+    .cbar-track{height:100px;width:19px}
+    .np{grid-template-columns:1fr;padding:12px 13px}
+    .modal{padding:14px 8px}
+    .mhead{padding:13px 14px}
+    .mstat{padding:10px 14px 2px}
+    .mbody{padding:8px 14px 16px}
+  }
   /* 列印 */
   @media print{
     body{background:#fff}
@@ -443,10 +483,12 @@ function lihuoOverview() {
   const fixed = rows.filter(r => r.first_score < 100 && lhBest(r) >= 100).length;
   const still = rows.filter(r => lhBest(r) < 100).length;
   const avgFirst = n ? rows.reduce((a, r) => a + (r.first_score ?? 0), 0) / n : 0;
+  const perfectRate = n ? perfect / n : 0;
   let h = `<div class="tiles">
     <div class="tile"><div class="k">理貨測驗人次</div><div class="v">${n}</div></div>
     <div class="tile"><div class="k">首測平均分</div><div class="v" style="color:var(--brand)">${avgFirst.toFixed(1)}</div></div>
     <div class="tile"><div class="k">首測即滿分</div><div class="v" style="color:var(--brand)">${perfect} <small>／${n}</small></div></div>
+    <div class="tile"><div class="k">首測滿分率</div><div class="v" style="color:var(--brand)">${pct(perfectRate)}</div></div>
     <div class="tile"><div class="k">靠補測達標</div><div class="v" style="color:var(--accent)">${fixed}</div></div>
     <div class="tile"><div class="k">仍未達滿分</div><div class="v" style="color:var(--warn)">${still}</div></div>
   </div>`;
