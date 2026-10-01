@@ -89,7 +89,14 @@ Claude Code 在本機的記憶、skills、hooks、MCP 設定、密鑰、沒上 G
 |---|---|
 | `backup.ps1` | 舊機打包。參數：`-DryRun`、`-SkipTranscripts`、`-SkipPrivate`、`-SkipSecrets`、`-Force`、`-Dest` |
 | `restore.ps1` | 新機還原。參數：`-DryRun`、`-Phase tools/files/secrets/repos/tasks/verify`、`-Source`、`-Zip`、`-Secrets` |
+| `redact.ps1` | 把明文 zip 裡的 token 遮成 `<<REDACTED>>`（.mcp.json、權限白名單、對話紀錄）。backup.ps1 壓縮前自動呼叫；也可事後 `-Zip <檔>` 修補既有包 |
 | `README-搬家手冊.md` | 本文件 |
+
+## 目前狀態（2026-10-01）
+
+- 已正式打包一次：`OneDrive\搬家包\搬家包_20261001-1931.zip`（562MB，2941 項）＋ `.secrets.tar.enc`（30KB）。
+- 明文 zip 已跑過 redact：遮掉 25 個檔案共 347 處 token（主要在對話紀錄與權限白名單），重掃 0 殘留。
+- 交機前再跑一次 `backup.ps1` 產生新的一組即可，舊的可刪。
 
 ## 技術備註（給未來的 Claude）
 

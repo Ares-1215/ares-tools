@@ -289,6 +289,11 @@ else {
     }
 }
 
+# ---------- 步驟 4.5：明文區遮蔽 token ----------
+Step "4.5 遮蔽明文區的 token（.mcp.json / 權限白名單 / 對話紀錄；正本在加密包）"
+if ($DryRun) { Info "(dry) 會執行 redact.ps1 -StageHome" }
+else { & (Join-Path $PSScriptRoot 'redact.ps1') -StageHome $StageHome }
+
 # ---------- 步驟 5：環境清單 ----------
 Step "5. 環境清單（給 restore.ps1 與人看）"
 Ensure-Dir $StageMeta
